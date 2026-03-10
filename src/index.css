@@ -219,10 +219,10 @@ p {
 
 .page-content {
   flex: 1;
-  padding: var(--space-8);
+  padding: var(--space-6);
   max-width: var(--content-max-width);
   width: 100%;
-  margin: 0 auto;
+  margin: 0;
 }
 
 .page-header {

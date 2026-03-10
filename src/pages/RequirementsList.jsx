@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { collection, doc, updateDoc, onSnapshot, serverTimestamp, addDoc, Timestamp, getDocs } from 'firebase/firestore';
 import { db, auth } from '../firebase';
-import { Edit2, X, UserPlus, Check } from 'lucide-react';
+import { Edit2, X, UserPlus, Check, Link, CalendarCheck } from 'lucide-react';
 import './RequirementsList.css';
 
 const STATUS_LABELS = {
@@ -27,13 +27,11 @@ const TEAMS = [
     'Producto',
     'Dirección',
     'Ventas',
-    'Mkt',
-    'UI/UX',
+    'Innovación',
     'Legal',
     'Investigación',
     'Data scientist',
     'Desarrollo',
-    'Equipo de Desarrollo',
     'Equipo de Diseño UI/UX',
     'QA & Testing',
     'Marketing Digital',
@@ -52,6 +50,10 @@ const FIELD_LABELS = {
     team: 'Equipo',
     rejectionReason: 'Motivo de Rechazo',
     assignees: 'Miembros Asignados',
+    businessRules: 'Reglas de Negocio',
+    timeType: 'Tipo de Tiempo',
+    attachments: 'Documentos / Ligas',
+    dueDate: 'Fecha de Entrega',
 };
 
 export default function RequirementsList() {
@@ -121,6 +123,10 @@ export default function RequirementsList() {
             team: req.team || '',
             rejectionReason: req.rejectionReason || '',
             assignees: req.assignees || [],
+            businessRules: req.businessRules || '',
+            timeType: req.timeType || 'definido',
+            attachments: req.attachments || '',
+            dueDate: req.dueDate || '',
         });
         setEditingReq(req);
     };
@@ -450,6 +456,56 @@ export default function RequirementsList() {
                                 </div>
                             </div>
 
+
+                            <div className="input-group" style={{ gridColumn: 'span 2' }}>
+                                <label className="input-group__label">Reglas de Negocio</label>
+                                <textarea
+                                    className="input-group__field"
+                                    style={{ height: '60px', resize: 'vertical' }}
+                                    value={formData.businessRules}
+                                    onChange={(e) => setFormData({ ...formData, businessRules: e.target.value })}
+                                    placeholder="Reglas de negocio que aplican..."
+                                />
+                            </div>
+
+                            <div className="input-group">
+                                <label className="input-group__label">Tipo de Tiempo</label>
+                                <select
+                                    className="input-group__field"
+                                    value={formData.timeType}
+                                    onChange={(e) => setFormData({ ...formData, timeType: e.target.value })}
+                                >
+                                    <option value="definido">Tiempo Definido</option>
+                                    <option value="indefinido">Tiempo Indefinido</option>
+                                </select>
+                            </div>
+
+                            <div className="input-group">
+                                <label className="input-group__label">
+                                    <CalendarCheck size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '6px' }} />
+                                    Fecha de Entrega
+                                </label>
+                                <input
+                                    type="date"
+                                    className="input-group__field"
+                                    value={formData.dueDate}
+                                    onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="input-group" style={{ gridColumn: 'span 2' }}>
+                                <label className="input-group__label">
+                                    <Link size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '6px' }} />
+                                    Documentos / Ligas
+                                </label>
+                                <textarea
+                                    className="input-group__field"
+                                    style={{ height: '60px', resize: 'vertical' }}
+                                    value={formData.attachments}
+                                    onChange={(e) => setFormData({ ...formData, attachments: e.target.value })}
+                                    placeholder="Enlaces a Drive, Figma, documentos de referencia..."
+                                />
+                            </div>
 
                             <div className="input-group" style={{ gridColumn: 'span 2' }}>
                                 <label className="input-group__label">Estado del Requerimiento</label>

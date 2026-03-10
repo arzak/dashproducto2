@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { collection, addDoc, serverTimestamp, getDocs, Timestamp } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
-import { X, ArrowRight, ArrowLeft, Filter, Triangle, Asterisk, Info, UserPlus, Check } from 'lucide-react';
+import { X, ArrowRight, ArrowLeft, Filter, Triangle, Asterisk, Info, UserPlus, Check, Link, CalendarCheck } from 'lucide-react';
 import { db } from '../firebase';
 import './RequirementForm.css';
 
@@ -21,13 +21,11 @@ const TEAMS = [
     'Producto',
     'Dirección',
     'Ventas',
-    'Mkt',
-    'UI/UX',
+    'Innovación',
     'Legal',
     'Investigación',
     'Data scientist',
     'Desarrollo',
-    'Equipo de Desarrollo',
     'Equipo de Diseño UI/UX',
     'QA & Testing',
     'Marketing Digital',
@@ -66,6 +64,10 @@ export default function RequirementForm() {
         assignees: [],
         acceptanceCriteria: '',
         technicalNotes: '',
+        businessRules: '',
+        timeType: 'definido',
+        attachments: '',
+        dueDate: '',
         created_at: new Date().toISOString().split('T')[0], // Default today
     });
 
@@ -259,7 +261,7 @@ export default function RequirementForm() {
                             <h3 style={{ marginBottom: 'var(--space-6)' }}>Detalles Técnicos</h3>
 
                             <div className="input-group" style={{ marginBottom: 'var(--space-6)' }}>
-                                <label className="input-group__label">Alcance del Trabajo</label>
+                                <label className="input-group__label">Objetivo</label>
                                 <textarea
                                     className="input-group__field input-group__field--textarea"
                                     placeholder="Define los límites del trabajo, entregables esperados..."
@@ -329,6 +331,57 @@ export default function RequirementForm() {
                                         {formData.assignees.length} miembro{formData.assignees.length > 1 ? 's' : ''} seleccionado{formData.assignees.length > 1 ? 's' : ''}
                                     </p>
                                 )}
+                            </div>
+
+                            <div className="input-group" style={{ marginBottom: 'var(--space-6)' }}>
+                                <label className="input-group__label">Reglas de Negocio</label>
+                                <textarea
+                                    className="input-group__field input-group__field--textarea"
+                                    placeholder="Describe las reglas de negocio que aplican a este requerimiento..."
+                                    value={formData.businessRules}
+                                    onChange={(e) => updateField('businessRules', e.target.value)}
+                                    style={{ minHeight: '100px' }}
+                                />
+                            </div>
+
+                            <div className="grid grid--2" style={{ marginBottom: 'var(--space-6)' }}>
+                                <div className="input-group">
+                                    <label className="input-group__label">Tipo de Tiempo</label>
+                                    <select
+                                        className="input-group__field"
+                                        value={formData.timeType}
+                                        onChange={(e) => updateField('timeType', e.target.value)}
+                                    >
+                                        <option value="definido">Tiempo Definido</option>
+                                        <option value="indefinido">Tiempo Indefinido</option>
+                                    </select>
+                                </div>
+                                <div className="input-group">
+                                    <label className="input-group__label">
+                                        <CalendarCheck size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '6px' }} />
+                                        Fecha de Entrega
+                                    </label>
+                                    <input
+                                        type="date"
+                                        className="input-group__field"
+                                        value={formData.dueDate}
+                                        onChange={(e) => updateField('dueDate', e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="input-group" style={{ marginBottom: 'var(--space-6)' }}>
+                                <label className="input-group__label">
+                                    <Link size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '6px' }} />
+                                    Documentos o Ligas (Drive, Figma, etc.)
+                                </label>
+                                <textarea
+                                    className="input-group__field input-group__field--textarea"
+                                    placeholder="Pega aquí los enlaces a Google Drive, Figma, documentos de referencia, etc. Un enlace por línea."
+                                    value={formData.attachments}
+                                    onChange={(e) => updateField('attachments', e.target.value)}
+                                    style={{ minHeight: '80px' }}
+                                />
                             </div>
 
                             <div className="input-group" style={{ marginBottom: 'var(--space-6)' }}>
@@ -404,14 +457,34 @@ export default function RequirementForm() {
                                     <span className="req-form__review-label">Horas Estimadas</span>
                                     <span className="req-form__review-value">{formData.estimatedHours || '—'}</span>
                                 </div>
+                                <div className="req-form__review-item">
+                                    <span className="req-form__review-label">Tipo de Tiempo</span>
+                                    <span className="req-form__review-value">{formData.timeType === 'definido' ? 'Tiempo Definido' : 'Tiempo Indefinido'}</span>
+                                </div>
+                                <div className="req-form__review-item">
+                                    <span className="req-form__review-label">Fecha de Entrega</span>
+                                    <span className="req-form__review-value">{formData.dueDate || '—'}</span>
+                                </div>
                                 <div className="req-form__review-item req-form__review-item--full">
                                     <span className="req-form__review-label">Descripción</span>
                                     <span className="req-form__review-value">{formData.description || '—'}</span>
                                 </div>
                                 {formData.scope && (
                                     <div className="req-form__review-item req-form__review-item--full">
-                                        <span className="req-form__review-label">Alcance</span>
+                                        <span className="req-form__review-label">Objetivo</span>
                                         <span className="req-form__review-value">{formData.scope}</span>
+                                    </div>
+                                )}
+                                {formData.businessRules && (
+                                    <div className="req-form__review-item req-form__review-item--full">
+                                        <span className="req-form__review-label">Reglas de Negocio</span>
+                                        <span className="req-form__review-value">{formData.businessRules}</span>
+                                    </div>
+                                )}
+                                {formData.attachments && (
+                                    <div className="req-form__review-item req-form__review-item--full">
+                                        <span className="req-form__review-label">Documentos / Ligas</span>
+                                        <span className="req-form__review-value" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{formData.attachments}</span>
                                     </div>
                                 )}
                             </div>
