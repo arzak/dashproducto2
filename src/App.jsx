@@ -7,6 +7,7 @@ import RequirementForm from './pages/RequirementForm';
 import Login from './pages/Login';
 import Team from './pages/Team';
 import RequirementsList from './pages/RequirementsList';
+import RequirementDetail from './pages/RequirementDetail';
 import { useAuth } from './context/AuthContext';
 
 function AppLayout({ children }) {
@@ -63,6 +64,7 @@ export default function App() {
         <AppLayout>
             <Routes>
                 <Route path="/" element={<KanbanBoard />} />
+                <Route path="/requerimiento/:id" element={<RequirementDetail />} />
                 <Route path="/tareas" element={<RequirementsList />} />
                 <Route path="/reportes" element={<Dashboard />} />
                 <Route path="/equipo" element={<Team />} />

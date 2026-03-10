@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { collection, onSnapshot, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { GripVertical, MoreHorizontal, Eye, Calendar, MessageSquare } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import './KanbanBoard.css';
 
@@ -61,6 +62,8 @@ export default function KanbanBoard() {
     const [cards, setCards] = useState(DEMO_CARDS);
     const [draggedCard, setDraggedCard] = useState(null);
     const [dragOverColumn, setDragOverColumn] = useState(null);
+    const wasDragged = useRef(false);
+    const navigate = useNavigate();
 
     useEffect(() => {
         try {
@@ -82,6 +85,7 @@ export default function KanbanBoard() {
 
     const handleDragStart = (e, card) => {
         setDraggedCard(card);
+        wasDragged.current = true;
         e.dataTransfer.effectAllowed = 'move';
         e.target.style.opacity = '0.5';
     };
@@ -166,6 +170,13 @@ export default function KanbanBoard() {
                                         draggable
                                         onDragStart={(e) => handleDragStart(e, card)}
                                         onDragEnd={handleDragEnd}
+                                        onClick={() => {
+                                            if (!wasDragged.current) {
+                                                navigate(`/requerimiento/${card.id}`);
+                                            }
+                                            wasDragged.current = false;
+                                        }}
+                                        style={{ cursor: 'pointer' }}
                                     >
                                         {card.priority && (
                                             <span
