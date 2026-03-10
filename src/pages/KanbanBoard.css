@@ -1,18 +1,22 @@
 .kanban__board {
     display: flex;
-    gap: var(--space-6);
+    gap: var(--space-4);
     overflow-x: auto;
     padding-bottom: var(--space-4);
-    min-height: 500px;
+    height: calc(100vh - 200px);
 }
 
 .kanban__column {
-    min-width: 280px;
-    max-width: 320px;
+    min-width: 250px;
+    max-width: 300px;
     flex: 1;
     border-radius: var(--radius-lg);
     transition: background var(--transition-fast);
-    padding: var(--space-2);
+    padding: var(--space-3);
+    background: rgba(148, 163, 184, 0.05);
+    border: 1px solid var(--color-border-light);
+    display: flex;
+    flex-direction: column;
 }
 
 .kanban__column--drag-over {
@@ -64,6 +68,23 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
+    overflow-y: auto;
+    flex: 1;
+    padding: 0 4px;
+}
+
+/* custom scrollbar for cards area */
+.kanban__cards::-webkit-scrollbar {
+    width: 4px;
+}
+
+.kanban__cards::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.kanban__cards::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 4px;
 }
 
 /* Card */
@@ -71,7 +92,7 @@
     background: var(--color-surface);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
-    padding: var(--space-4);
+    padding: var(--space-3);
     cursor: grab;
     transition: all var(--transition-fast);
     animation: fadeInUp 0.3s ease-out both;
@@ -90,10 +111,10 @@
 }
 
 .kanban-card__title {
-    font-size: var(--font-size-base);
+    font-size: var(--font-size-sm);
     font-weight: var(--font-weight-semibold);
     color: var(--color-text-primary);
-    margin-top: var(--space-2);
+    margin-top: var(--space-1);
     margin-bottom: var(--space-1);
 }
 
@@ -111,8 +132,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-top: var(--space-4);
-    padding-top: var(--space-3);
+    margin-top: var(--space-3);
+    padding-top: var(--space-2);
     border-top: 1px solid var(--color-border-light);
 }
 

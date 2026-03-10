@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { collection, doc, updateDoc, onSnapshot, serverTimestamp, addDoc, Timestamp } from 'firebase/firestore';
+import { collection, doc, updateDoc, onSnapshot, serverTimestamp, addDoc, Timestamp, getDocs } from 'firebase/firestore';
 import { db, auth } from '../firebase';
-import { Edit2, X } from 'lucide-react';
+import { Edit2, X, UserPlus, Check } from 'lucide-react';
 import './RequirementsList.css';
 
 const STATUS_LABELS = {
@@ -51,6 +51,7 @@ const FIELD_LABELS = {
     status: 'Estado',
     team: 'Equipo',
     rejectionReason: 'Motivo de Rechazo',
+    assignees: 'Miembros Asignados',
 };
 
 export default function RequirementsList() {
@@ -58,6 +59,7 @@ export default function RequirementsList() {
     const [editingReq, setEditingReq] = useState(null);
     const [formData, setFormData] = useState({});
     const [saving, setSaving] = useState(false);
+    const [availableMembers, setAvailableMembers] = useState([]);
 
     // Filters and Sorting
     const [filterStatus, setFilterStatus] = useState('');
@@ -70,6 +72,21 @@ export default function RequirementsList() {
             const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
             setRequirements(data);
         });
+
+        const fetchMembers = async () => {
+            try {
+                const querySnapshot = await getDocs(collection(db, 'users'));
+                const usersList = [];
+                querySnapshot.forEach((doc) => {
+                    usersList.push({ id: doc.id, ...doc.data() });
+                });
+                setAvailableMembers(usersList);
+            } catch (error) {
+                console.error("Error fetching users:", error);
+            }
+        };
+        fetchMembers();
+
         return unsubscribe;
     }, []);
 
@@ -103,8 +120,22 @@ export default function RequirementsList() {
             status: req.status || 'backlog',
             team: req.team || '',
             rejectionReason: req.rejectionReason || '',
+            assignees: req.assignees || [],
         });
         setEditingReq(req);
+    };
+
+    const toggleAssignee = (member) => {
+        setFormData((prev) => {
+            const currentAssignees = prev.assignees || [];
+            const exists = currentAssignees.find((a) => a.id === member.id);
+            return {
+                ...prev,
+                assignees: exists
+                    ? currentAssignees.filter((a) => a.id !== member.id)
+                    : [...currentAssignees, { id: member.id, name: member.name, initials: member.initials, color: member.color }],
+            };
+        });
     };
 
     const handleCloseModal = () => {
@@ -119,14 +150,26 @@ export default function RequirementsList() {
         // ── 1. Detect changed fields ──
         const changes = [];
         Object.keys(FIELD_LABELS).forEach((field) => {
-            const oldVal = String(editingReq[field] || '');
-            const newVal = String(formData[field] || '');
-            if (oldVal !== newVal) {
-                changes.push({
-                    field: FIELD_LABELS[field],
-                    from: oldVal || '—',
-                    to: newVal || '—',
-                });
+            if (field === 'assignees') {
+                const oldNames = (editingReq.assignees || []).map(a => a.name).sort().join(', ');
+                const newNames = (formData.assignees || []).map(a => a.name).sort().join(', ');
+                if (oldNames !== newNames) {
+                    changes.push({
+                        field: FIELD_LABELS[field],
+                        from: oldNames || '—',
+                        to: newNames || '—',
+                    });
+                }
+            } else {
+                const oldVal = String(editingReq[field] || '');
+                const newVal = String(formData[field] || '');
+                if (oldVal !== newVal) {
+                    changes.push({
+                        field: FIELD_LABELS[field],
+                        from: oldVal || '—',
+                        to: newVal || '—',
+                    });
+                }
             }
         });
 
@@ -377,6 +420,36 @@ export default function RequirementsList() {
                                     ))}
                                 </select>
                             </div>
+
+                            <div style={{ gridColumn: 'span 2' }}>
+                                <label className="input-group__label" style={{ marginBottom: 'var(--space-3)', display: 'block' }}>
+                                    <UserPlus size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '6px' }} />
+                                    Miembros Asignados
+                                </label>
+                                <div className="req-form__members-grid">
+                                    {availableMembers.map((member) => {
+                                        const isSelected = (formData.assignees || []).some((a) => a.id === member.id);
+                                        return (
+                                            <button
+                                                key={member.id}
+                                                type="button"
+                                                className={`req-form__member-chip ${isSelected ? 'req-form__member-chip--active' : ''}`}
+                                                onClick={() => toggleAssignee(member)}
+                                            >
+                                                <div
+                                                    className="avatar avatar--sm"
+                                                    style={{ background: member.color, flexShrink: 0 }}
+                                                >
+                                                    {member.initials[0]}
+                                                </div>
+                                                <span>{member.name}</span>
+                                                {isSelected && <Check size={14} className="req-form__member-check" />}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
 
                             <div className="input-group" style={{ gridColumn: 'span 2' }}>
                                 <label className="input-group__label">Estado del Requerimiento</label>
