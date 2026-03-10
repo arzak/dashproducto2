@@ -1,0 +1,100 @@
+.navbar {
+    height: var(--navbar-height);
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border-light);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--space-8);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.navbar__search {
+    position: relative;
+    width: 280px;
+}
+
+.navbar__search-icon {
+    position: absolute;
+    left: var(--space-3);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-muted);
+    pointer-events: none;
+}
+
+.navbar__search-input {
+    width: 100%;
+    padding: var(--space-2) var(--space-4) var(--space-2) 36px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text-primary);
+    font-size: var(--font-size-sm);
+    transition: all var(--transition-fast);
+}
+
+.navbar__search-input::placeholder {
+    color: var(--color-text-muted);
+}
+
+.navbar__search-input:focus {
+    border-color: var(--color-primary);
+    background: var(--color-surface);
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.08);
+}
+
+.navbar__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.navbar__icon-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-secondary);
+    transition: all var(--transition-fast);
+}
+
+.navbar__icon-btn:hover {
+    background: var(--color-bg);
+    color: var(--color-text-primary);
+}
+
+.navbar__icon-btn--logout:hover {
+    color: var(--color-danger);
+}
+
+.navbar__user {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-left: var(--space-2);
+    padding-left: var(--space-3);
+    border-left: 1px solid var(--color-border-light);
+}
+
+.navbar__avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-full);
+    object-fit: cover;
+    border: 2px solid var(--color-primary-light);
+}
+
+.navbar__avatar--placeholder {
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-sm);
+}

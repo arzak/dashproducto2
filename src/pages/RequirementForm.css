@@ -1,0 +1,221 @@
+.req-form-overlay {
+    min-height: 100vh;
+    background: var(--color-bg);
+}
+
+.req-form__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4) var(--space-8);
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border-light);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.req-form__header-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.req-form__body {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: var(--space-8) var(--space-6);
+}
+
+.req-form__progress-section {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: var(--space-3);
+}
+
+.req-form__step-tag {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: var(--space-1);
+    display: block;
+}
+
+.req-form__progress-pct {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    white-space: nowrap;
+}
+
+.req-form__next-hint {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    font-style: italic;
+    margin-bottom: var(--space-8);
+}
+
+.req-form__content {
+    margin-bottom: var(--space-8);
+}
+
+.req-form__card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    padding: var(--space-8);
+}
+
+/* Priority Cards */
+.req-form__priority-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-3);
+}
+
+.req-form__priority-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    text-align: left;
+    transition: all var(--transition-fast);
+    cursor: pointer;
+}
+
+.req-form__priority-card:hover {
+    border-color: var(--color-primary);
+    background: var(--color-primary-pale);
+}
+
+.req-form__priority-card--active {
+    border-color: var(--color-primary);
+    background: var(--color-primary-pale);
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.12);
+}
+
+.req-form__priority-card strong {
+    font-size: var(--font-size-md);
+    color: var(--color-text-primary);
+}
+
+.req-form__priority-card span {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.req-form__char-count {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    font-style: italic;
+}
+
+/* Member Chips */
+.req-form__members-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: var(--space-2);
+}
+
+.req-form__member-chip {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-full);
+    background: var(--color-surface);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-size: var(--font-size-sm);
+    position: relative;
+}
+
+.req-form__member-chip:hover {
+    border-color: var(--color-primary-light);
+    background: var(--color-primary-pale);
+}
+
+.req-form__member-chip--active {
+    border-color: var(--color-primary);
+    background: var(--color-primary-pale);
+    box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.15);
+}
+
+.req-form__member-check {
+    color: var(--color-primary);
+    margin-left: auto;
+}
+
+/* Actions */
+.req-form__actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-8);
+}
+
+/* Review Grid */
+.req-form__review-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+}
+
+.req-form__review-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.req-form__review-item--full {
+    grid-column: 1 / -1;
+}
+
+.req-form__review-label {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.req-form__review-value {
+    font-size: var(--font-size-base);
+    color: var(--color-text-primary);
+    line-height: var(--line-height-relaxed);
+}
+
+/* Tip */
+.req-form__tip {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5);
+    background: var(--color-primary-pale);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-primary-light);
+}
+
+.req-form__tip strong {
+    display: block;
+    margin-bottom: var(--space-1);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+}
+
+@media (max-width: 640px) {
+    .req-form__priority-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .req-form__review-grid {
+        grid-template-columns: 1fr;
+    }
+}

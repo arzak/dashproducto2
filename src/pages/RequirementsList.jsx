@@ -1,0 +1,422 @@
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { collection, doc, updateDoc, onSnapshot, serverTimestamp, addDoc, Timestamp } from 'firebase/firestore';
+import { db, auth } from '../firebase';
+import { Edit2, X } from 'lucide-react';
+import './RequirementsList.css';
+
+const STATUS_LABELS = {
+    backlog: 'Backlog',
+    analisis: 'Análisis QA',
+    desarrollo: 'Desarrollo',
+    review: 'Code Review',
+    done: 'Terminado',
+    rechazado: 'Rechazado',
+};
+
+const STATUS_COLORS = {
+    backlog: '#94A3B8',
+    analisis: '#3B82F6',
+    desarrollo: '#F59E0B',
+    review: '#8B5CF6',
+    done: '#10B981',
+    rechazado: '#EF4444',
+};
+
+const TEAMS = [
+    'Producto',
+    'Dirección',
+    'Ventas',
+    'Mkt',
+    'UI/UX',
+    'Legal',
+    'Investigación',
+    'Data scientist',
+    'Desarrollo',
+    'Equipo de Desarrollo',
+    'Equipo de Diseño UI/UX',
+    'QA & Testing',
+    'Marketing Digital',
+    'DevOps / SRE',
+];
+
+const PRIORITIES = ['Alta', 'Media', 'Baja'];
+
+const FIELD_LABELS = {
+    title: 'Título',
+    description: 'Descripción',
+    scope: 'Alcance',
+    requester: 'Solicitante',
+    priority: 'Prioridad',
+    status: 'Estado',
+    team: 'Equipo',
+    rejectionReason: 'Motivo de Rechazo',
+};
+
+export default function RequirementsList() {
+    const [requirements, setRequirements] = useState([]);
+    const [editingReq, setEditingReq] = useState(null);
+    const [formData, setFormData] = useState({});
+    const [saving, setSaving] = useState(false);
+
+    // Filters and Sorting
+    const [filterStatus, setFilterStatus] = useState('');
+    const [filterPriority, setFilterPriority] = useState('');
+    const [sortByDate, setSortByDate] = useState('desc'); // 'desc' | 'asc'
+
+
+    useEffect(() => {
+        const unsubscribe = onSnapshot(collection(db, 'requirements'), (snapshot) => {
+            const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            setRequirements(data);
+        });
+        return unsubscribe;
+    }, []);
+
+    const formatDate = (timestamp) => {
+        if (!timestamp) return 'S/F';
+        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+        return date.toLocaleDateString();
+    };
+
+    // Derived list for display
+    const displayedRequirements = requirements
+        .filter(req => {
+            if (filterStatus && req.status !== filterStatus) return false;
+            if (filterPriority && req.priority !== filterPriority) return false;
+            return true;
+        })
+        .sort((a, b) => {
+            const dateA = a.created_at?.toDate ? a.created_at.toDate() : new Date(a.created_at || 0);
+            const dateB = b.created_at?.toDate ? b.created_at.toDate() : new Date(b.created_at || 0);
+            return sortByDate === 'desc' ? dateB - dateA : dateA - dateB;
+        });
+
+
+    const handleEditClick = (req) => {
+        setFormData({
+            title: req.title || '',
+            description: req.description || '',
+            scope: req.scope || '',
+            requester: req.requester || '',
+            priority: req.priority || 'Media',
+            status: req.status || 'backlog',
+            team: req.team || '',
+            rejectionReason: req.rejectionReason || '',
+        });
+        setEditingReq(req);
+    };
+
+    const handleCloseModal = () => {
+        setEditingReq(null);
+        setFormData({});
+    };
+
+    const handleSave = async () => {
+        if (!editingReq || saving) return;
+        setSaving(true);
+
+        // ── 1. Detect changed fields ──
+        const changes = [];
+        Object.keys(FIELD_LABELS).forEach((field) => {
+            const oldVal = String(editingReq[field] || '');
+            const newVal = String(formData[field] || '');
+            if (oldVal !== newVal) {
+                changes.push({
+                    field: FIELD_LABELS[field],
+                    from: oldVal || '—',
+                    to: newVal || '—',
+                });
+            }
+        });
+
+        // ── 2. Update requirement in Firestore ──
+        try {
+            const updatePayload = { ...formData };
+            if (formData.status !== editingReq.status) {
+                updatePayload[`status_${formData.status}_at`] = serverTimestamp();
+            }
+            await updateDoc(doc(db, 'requirements', editingReq.id), updatePayload);
+        } catch (error) {
+            console.error('Error actualizando requerimiento:', error);
+            alert('No se pudo guardar. Verifica tus permisos en Firestore.');
+            setSaving(false);
+            return;
+        }
+
+        // ── 3. Close modal right after save succeeds ──
+        handleCloseModal();
+        setSaving(false);
+
+        // ── 4. Write audit log (non-blocking, best-effort) ──
+        if (changes.length > 0) {
+            const user = auth.currentUser;
+            addDoc(collection(db, 'audit_logs'), {
+                requirement_id: editingReq.id,
+                requirement_title: editingReq.title || editingReq.id,
+                edited_by: user ? (user.displayName || user.email) : 'Desconocido',
+                edited_by_uid: user?.uid || null,
+                edited_at: Timestamp.now(),
+                changes,
+            }).catch((err) => console.warn('Audit log no guardado:', err));
+        }
+    };
+
+    return (
+        <div className="requirements-list animate-fade-in">
+            <div className="page-header">
+                <div className="page-header__title">
+                    <h1>Lista de Requerimientos</h1>
+                    <p>Vista tabular detallada y edición de requerimientos activos.</p>
+                </div>
+            </div>
+
+            <div className="req-filters animate-fade-in" style={{ display: 'flex', gap: '12px', marginBottom: 'var(--space-6)', flexWrap: 'wrap' }}>
+                <div className="input-group" style={{ margin: 0, width: '220px' }}>
+                    <select
+                        className="input-group__field"
+                        value={sortByDate}
+                        onChange={e => setSortByDate(e.target.value)}
+                    >
+                        <option value="desc">Más recientes primero</option>
+                        <option value="asc">Más antiguos primero</option>
+                    </select>
+                </div>
+
+                <div className="input-group" style={{ margin: 0, width: '200px' }}>
+                    <select
+                        className="input-group__field"
+                        value={filterStatus}
+                        onChange={e => setFilterStatus(e.target.value)}
+                    >
+                        <option value="">Todos los Estados</option>
+                        {Object.entries(STATUS_LABELS).map(([key, label]) => (
+                            <option key={key} value={key}>{label}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="input-group" style={{ margin: 0, width: '200px' }}>
+                    <select
+                        className="input-group__field"
+                        value={filterPriority}
+                        onChange={e => setFilterPriority(e.target.value)}
+                    >
+                        <option value="">Todas las Prioridades</option>
+                        {PRIORITIES.map(p => (
+                            <option key={p} value={p}>{p}</option>
+                        ))}
+                    </select>
+                </div>
+            </div>
+
+
+            <div className="card" style={{ overflowX: 'auto' }}>
+                <table className="data-table">
+                    <thead>
+                        <tr>
+                            <th>Requerimiento</th>
+                            <th>Descripción / Alcance</th>
+                            <th>Solicitante / Equipo</th>
+                            <th>Fecha</th>
+                            <th>Prioridad</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {displayedRequirements.map((req) => (
+                            <tr key={req.id}>
+                                <td>
+                                    <div style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>
+                                        {req.title}
+                                    </div>
+                                    <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: '4px' }}>
+                                        ID: {req.id.slice(0, 8)}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style={{ fontSize: 'var(--font-size-sm)', maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        <strong>Desc:</strong> {req.description || 'N/A'}
+                                    </div>
+                                    <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>
+                                        <strong>Alcance:</strong> {req.scope || 'N/A'}
+                                    </div>
+                                    {req.status === 'rechazado' && req.rejectionReason && (
+                                        <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-danger)', maxWidth: '280px', marginTop: '4px', fontStyle: 'italic' }}>
+                                            <strong>Motivo:</strong> {req.rejectionReason}
+                                        </div>
+                                    )}
+                                </td>
+                                <td>
+                                    <div style={{ fontSize: 'var(--font-size-sm)' }}>
+                                        {req.requester || 'Sin solicitante'}
+                                    </div>
+                                    <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: '2px' }}>
+                                        {req.team || 'Sin equipo'}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', whiteSpace: 'nowrap' }}>
+                                        {formatDate(req.created_at)}
+                                    </div>
+                                </td>
+                                <td>
+                                    <span className={`badge badge--${(req.priority || 'media').toLowerCase()}`}>
+                                        {req.priority || 'Media'}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: STATUS_COLORS[req.status] || STATUS_COLORS.backlog }} />
+                                        <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 500 }}>
+                                            {STATUS_LABELS[req.status] || STATUS_LABELS.backlog}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <button
+                                        className="btn btn--icon btn--ghost"
+                                        onClick={() => handleEditClick(req)}
+                                        title="Editar requerimiento"
+                                    >
+                                        <Edit2 size={16} />
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                        {displayedRequirements.length === 0 && (
+                            <tr>
+                                <td colSpan="7" style={{ textAlign: 'center', padding: 'var(--space-8)', color: 'var(--color-text-muted)' }}>
+                                    No se encontraron requerimientos.
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Edit Modal — portal so it escapes sidebar/page layout */}
+            {editingReq && createPortal(
+                <div className="req-modal-overlay">
+                    <div className="req-modal-content animate-slide-in">
+                        <div className="req-modal-header">
+                            <div>
+                                <h2>Editar Requerimiento</h2>
+                                <p>Modifica los campos del requerimiento seleccionado.</p>
+                            </div>
+                            <button className="btn btn--icon btn--ghost" onClick={handleCloseModal}>
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="req-modal-body grid grid--2">
+                            <div className="input-group">
+                                <label className="input-group__label">Título</label>
+                                <input
+                                    type="text"
+                                    className="input-group__field"
+                                    value={formData.title}
+                                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="input-group">
+                                <label className="input-group__label">Solicitante</label>
+                                <input
+                                    type="text"
+                                    className="input-group__field"
+                                    value={formData.requester}
+                                    onChange={(e) => setFormData({ ...formData, requester: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="input-group" style={{ gridColumn: 'span 2' }}>
+                                <label className="input-group__label">Descripción</label>
+                                <textarea
+                                    className="input-group__field"
+                                    style={{ height: '80px', resize: 'vertical' }}
+                                    value={formData.description}
+                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="input-group" style={{ gridColumn: 'span 2' }}>
+                                <label className="input-group__label">Alcance y Límites</label>
+                                <textarea
+                                    className="input-group__field"
+                                    style={{ height: '60px', resize: 'vertical' }}
+                                    value={formData.scope}
+                                    onChange={(e) => setFormData({ ...formData, scope: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="input-group">
+                                <label className="input-group__label">Equipo</label>
+                                <select
+                                    className="input-group__field"
+                                    value={formData.team}
+                                    onChange={(e) => setFormData({ ...formData, team: e.target.value })}
+                                >
+                                    <option value="">-- Seleccionar Equipo --</option>
+                                    {TEAMS.map((t) => (
+                                        <option key={t} value={t}>{t}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="input-group">
+                                <label className="input-group__label">Prioridad</label>
+                                <select
+                                    className="input-group__field"
+                                    value={formData.priority}
+                                    onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                                >
+                                    {PRIORITIES.map((p) => (
+                                        <option key={p} value={p}>{p}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="input-group" style={{ gridColumn: 'span 2' }}>
+                                <label className="input-group__label">Estado del Requerimiento</label>
+                                <select
+                                    className="input-group__field"
+                                    value={formData.status}
+                                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                                >
+                                    {Object.entries(STATUS_LABELS).map(([key, label]) => (
+                                        <option key={key} value={key}>{label}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {formData.status === 'rechazado' && (
+                                <div className="input-group" style={{ gridColumn: 'span 2' }}>
+                                    <label className="input-group__label">Razón del Rechazo</label>
+                                    <textarea
+                                        className="input-group__field"
+                                        style={{ height: '60px', resize: 'vertical' }}
+                                        value={formData.rejectionReason}
+                                        onChange={(e) => setFormData({ ...formData, rejectionReason: e.target.value })}
+                                        placeholder="Motivo por el cual este requerimiento no se llevará a cabo..."
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="req-modal-footer">
+                            <button className="btn btn--secondary" onClick={handleCloseModal} disabled={saving}>
+                                Cancelar
+                            </button>
+                            <button className="btn btn--primary" onClick={handleSave} disabled={saving}>
+                                {saving ? 'Guardando...' : 'Guardar Cambios'}
+                            </button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
+        </div>
+    );
+}

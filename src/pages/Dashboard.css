@@ -1,0 +1,39 @@
+.dashboard {
+    animation: fadeInUp 0.4s ease-out;
+}
+
+.card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-6);
+}
+
+.dashboard__chart {
+    margin-top: var(--space-4);
+}
+
+.dashboard__workload {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+
+.workload-item__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-2);
+}
+
+.workload-item__name {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+}
+
+.workload-item__value {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+}
