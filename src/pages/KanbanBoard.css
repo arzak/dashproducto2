@@ -159,3 +159,36 @@
     font-size: var(--font-size-xs);
     color: var(--color-text-muted);
 }
+
+/* ---------- Responsive ---------- */
+
+/* Laptop 14" & Tablet (769px - 1366px): compact columns */
+@media (max-width: 1366px) and (min-width: 769px) {
+    .kanban__board {
+        height: calc(100vh - 180px);
+        gap: var(--space-3);
+    }
+
+    .kanban__column {
+        min-width: 200px;
+        max-width: 240px;
+    }
+}
+
+/* Mobile (≤768px): horizontal scroll with full-height columns */
+@media (max-width: 768px) {
+    .kanban__board {
+        height: calc(100vh - 180px);
+        gap: var(--space-3);
+        padding: 0 var(--space-2) var(--space-4);
+    }
+
+    .kanban__column {
+        min-width: 260px;
+        max-width: 280px;
+    }
+
+    .kanban-card {
+        padding: var(--space-3);
+    }
+}

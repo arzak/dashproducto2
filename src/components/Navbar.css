@@ -98,3 +98,27 @@
     font-weight: var(--font-weight-bold);
     font-size: var(--font-size-sm);
 }
+
+/* ---------- Responsive ---------- */
+/* Laptop 14": tighter navbar padding */
+@media (max-width: 1200px) and (min-width: 769px) {
+    .navbar {
+        padding: 0 var(--space-4);
+    }
+
+    .navbar__search {
+        width: 200px;
+    }
+}
+
+/* Mobile / Tablet */
+@media (max-width: 768px) {
+    .navbar {
+        padding: 0 var(--space-4);
+        justify-content: flex-end;
+    }
+
+    .navbar__search {
+        display: none;
+    }
+}

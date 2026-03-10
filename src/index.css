@@ -220,7 +220,6 @@ p {
 .page-content {
   flex: 1;
   padding: var(--space-6);
-  max-width: var(--content-max-width);
   width: 100%;
   margin: 0;
 }
@@ -638,11 +637,22 @@ p {
   }
 }
 
+/* Laptop 14": compact icon sidebar (64px) */
+@media (max-width: 1366px) and (min-width: 769px) {
+  .main-area {
+    margin-left: 64px;
+  }
+}
+
+/* Mobile / Tablet: bottom nav */
 @media (max-width: 768px) {
   .main-area {
     margin-left: 0;
-    padding-bottom: 74px;
-    /* Space for mobile nav bar */
+    padding-bottom: 60px;
+  }
+
+  .page-content {
+    padding: var(--space-4);
   }
 }
 
@@ -651,10 +661,6 @@ p {
   .grid--3,
   .grid--2 {
     grid-template-columns: 1fr;
-  }
-
-  .page-content {
-    padding: var(--space-4);
   }
 
   .page-header {

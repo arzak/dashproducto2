@@ -37,6 +37,7 @@ export default function Sidebar() {
                     <NavLink
                         key={path}
                         to={path}
+                        data-label={label}
                         className={({ isActive }) =>
                             `sidebar__link ${isActive ? 'sidebar__link--active' : ''}`
                         }
