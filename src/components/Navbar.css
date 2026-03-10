@@ -11,9 +11,16 @@
     z-index: 50;
 }
 
+/* ── Search wrap (positions the dropdown) ── */
+.navbar__search-wrap {
+    position: relative;
+}
+
 .navbar__search {
     position: relative;
-    width: 280px;
+    width: 300px;
+    display: flex;
+    align-items: center;
 }
 
 .navbar__search-icon {
@@ -97,6 +104,159 @@
     justify-content: center;
     font-weight: var(--font-weight-bold);
     font-size: var(--font-size-sm);
+}
+
+/* ── Search input (overrides) ── */
+.navbar__search-input {
+    padding-right: 80px;
+    /* room for kbd + clear */
+}
+
+/* Clear button (×) */
+.navbar__search-clear {
+    position: absolute;
+    right: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: color var(--transition-fast);
+}
+
+.navbar__search-clear:hover {
+    color: var(--color-text-primary);
+}
+
+/* Kbd hint */
+.navbar__search-kbd {
+    position: absolute;
+    right: 10px;
+    font-size: 10px;
+    font-family: monospace;
+    color: var(--color-text-muted);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 2px 5px;
+    line-height: 1.4;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+/* Dropdown container */
+.navbar__dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    width: 380px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    overflow: hidden;
+    animation: fadeInUp 0.15s ease-out both;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* Section label */
+.navbar__dropdown-label {
+    padding: 10px 14px 6px;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--color-text-muted);
+}
+
+/* Result row */
+.navbar__dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    padding: 10px 14px;
+    text-align: left;
+    transition: background var(--transition-fast);
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-family: inherit;
+}
+
+.navbar__dropdown-item:hover {
+    background: var(--color-bg);
+}
+
+.navbar__dropdown-item:active {
+    background: var(--color-primary-light);
+}
+
+.navbar__dropdown-item-icon {
+    color: var(--color-primary);
+    flex-shrink: 0;
+}
+
+.navbar__dropdown-item-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.navbar__dropdown-item-title {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.navbar__dropdown-item-sub {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+/* Remove recent item button */
+.navbar__dropdown-item-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    opacity: 0;
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.navbar__dropdown-item:hover .navbar__dropdown-item-remove {
+    opacity: 1;
+}
+
+.navbar__dropdown-item-remove:hover {
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+}
+
+/* Empty state */
+.navbar__dropdown-empty {
+    padding: 24px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    text-align: center;
 }
 
 /* ---------- Responsive ---------- */
