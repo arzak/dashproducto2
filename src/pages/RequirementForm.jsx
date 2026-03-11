@@ -75,11 +75,21 @@ export default function RequirementForm() {
         setFormData((prev) => {
             const currentTeams = prev.teams || [];
             const exists = currentTeams.includes(teamName);
+            const newTeams = exists
+                ? currentTeams.filter((t) => t !== teamName)
+                : [...currentTeams, teamName];
+
+            // When removing a team, also remove assignees that belonged to that team
+            // (only if there are still other teams selected — if no teams selected, show all)
+            let newAssignees = prev.assignees;
+            if (exists && newTeams.length > 0) {
+                newAssignees = prev.assignees.filter((a) => newTeams.includes(a.team));
+            }
+
             return {
                 ...prev,
-                teams: exists
-                    ? currentTeams.filter((t) => t !== teamName)
-                    : [...currentTeams, teamName],
+                teams: newTeams,
+                assignees: newAssignees,
             };
         });
     };
@@ -323,28 +333,48 @@ export default function RequirementForm() {
                                 <label className="input-group__label" style={{ marginBottom: 'var(--space-3)', display: 'block' }}>
                                     <UserPlus size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '6px' }} />
                                     Asignar Miembros del Equipo
+                                    {(formData.teams || []).length > 0 && (
+                                        <span style={{ fontWeight: 400, color: 'var(--color-text-muted)', marginLeft: '8px', fontSize: 'var(--font-size-xs)' }}>
+                                            — Mostrando miembros de: {formData.teams.join(', ')}
+                                        </span>
+                                    )}
                                 </label>
                                 <div className="req-form__members-grid">
-                                    {availableMembers.map((member) => {
-                                        const isSelected = formData.assignees.some((a) => a.id === member.id);
-                                        return (
-                                            <button
-                                                key={member.id}
-                                                type="button"
-                                                className={`req-form__member-chip ${isSelected ? 'req-form__member-chip--active' : ''}`}
-                                                onClick={() => toggleAssignee(member)}
-                                            >
-                                                <div
-                                                    className="avatar avatar--sm"
-                                                    style={{ background: member.color, flexShrink: 0 }}
+                                    {(() => {
+                                        const selectedTeams = formData.teams || [];
+                                        const filteredMembers = selectedTeams.length > 0
+                                            ? availableMembers.filter(m => selectedTeams.includes(m.team))
+                                            : availableMembers;
+
+                                        if (filteredMembers.length === 0 && selectedTeams.length > 0) {
+                                            return (
+                                                <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', padding: 'var(--space-4)', textAlign: 'center', gridColumn: '1 / -1' }}>
+                                                    No hay miembros asignados a los equipos seleccionados. Agrega miembros desde el <strong>Directorio del Equipo</strong>.
+                                                </p>
+                                            );
+                                        }
+
+                                        return filteredMembers.map((member) => {
+                                            const isSelected = formData.assignees.some((a) => a.id === member.id);
+                                            return (
+                                                <button
+                                                    key={member.id}
+                                                    type="button"
+                                                    className={`req-form__member-chip ${isSelected ? 'req-form__member-chip--active' : ''}`}
+                                                    onClick={() => toggleAssignee(member)}
                                                 >
-                                                    {member.initials[0]}
-                                                </div>
-                                                <span>{member.name}</span>
-                                                {isSelected && <Check size={14} className="req-form__member-check" />}
-                                            </button>
-                                        );
-                                    })}
+                                                    <div
+                                                        className="avatar avatar--sm"
+                                                        style={{ background: member.color, flexShrink: 0 }}
+                                                    >
+                                                        {member.initials?.[0] || member.name?.[0] || '?'}
+                                                    </div>
+                                                    <span>{member.name}</span>
+                                                    {isSelected && <Check size={14} className="req-form__member-check" />}
+                                                </button>
+                                            );
+                                        });
+                                    })()}
                                 </div>
                                 {formData.assignees.length > 0 && (
                                     <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-2)' }}>

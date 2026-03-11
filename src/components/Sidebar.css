@@ -70,7 +70,7 @@
 
 .sidebar__link--active {
     background: var(--color-primary-light);
-    color: var(--color-primary);
+    color: var(--color-primary-content);
     font-weight: var(--font-weight-semibold);
 }
 
