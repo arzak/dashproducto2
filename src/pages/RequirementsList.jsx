@@ -47,7 +47,7 @@ const FIELD_LABELS = {
     requester: 'Solicitante',
     priority: 'Prioridad',
     status: 'Estado',
-    team: 'Equipo',
+    teams: 'Equipos',
     rejectionReason: 'Motivo de Rechazo',
     assignees: 'Miembros Asignados',
     businessRules: 'Reglas de Negocio',
@@ -120,7 +120,8 @@ export default function RequirementsList() {
             requester: req.requester || '',
             priority: req.priority || 'Media',
             status: req.status || 'backlog',
-            team: req.team || '',
+            teams: req.teams || [],
+            team: req.team || '', // Legacy fallback
             rejectionReason: req.rejectionReason || '',
             assignees: req.assignees || [],
             businessRules: req.businessRules || '',
@@ -140,6 +141,19 @@ export default function RequirementsList() {
                 assignees: exists
                     ? currentAssignees.filter((a) => a.id !== member.id)
                     : [...currentAssignees, { id: member.id, name: member.name, initials: member.initials, color: member.color }],
+            };
+        });
+    };
+
+    const toggleTeam = (teamName) => {
+        setFormData((prev) => {
+            const currentTeams = prev.teams || [];
+            const exists = currentTeams.includes(teamName);
+            return {
+                ...prev,
+                teams: exists
+                    ? currentTeams.filter((t) => t !== teamName)
+                    : [...currentTeams, teamName],
             };
         });
     };
@@ -164,6 +178,16 @@ export default function RequirementsList() {
                         field: FIELD_LABELS[field],
                         from: oldNames || '—',
                         to: newNames || '—',
+                    });
+                }
+            } else if (field === 'teams') {
+                const oldVals = (editingReq.teams || []).sort().join(', ');
+                const newVals = (formData.teams || []).sort().join(', ');
+                if (oldVals !== newVals) {
+                    changes.push({
+                        field: FIELD_LABELS[field],
+                        from: oldVals || '—',
+                        to: newVals || '—',
                     });
                 }
             } else {
@@ -301,8 +325,8 @@ export default function RequirementsList() {
                                     <div style={{ fontSize: 'var(--font-size-sm)' }}>
                                         {req.requester || 'Sin solicitante'}
                                     </div>
-                                    <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: '2px' }}>
-                                        {req.team || 'Sin equipo'}
+                                    <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: '2px', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {req.teams?.length > 0 ? req.teams.join(', ') : (req.team || 'Sin equipo')}
                                     </div>
                                 </td>
                                 <td>
@@ -400,18 +424,27 @@ export default function RequirementsList() {
                                 />
                             </div>
 
-                            <div className="input-group">
-                                <label className="input-group__label">Equipo</label>
-                                <select
-                                    className="input-group__field"
-                                    value={formData.team}
-                                    onChange={(e) => setFormData({ ...formData, team: e.target.value })}
-                                >
-                                    <option value="">-- Seleccionar Equipo --</option>
-                                    {TEAMS.map((t) => (
-                                        <option key={t} value={t}>{t}</option>
-                                    ))}
-                                </select>
+                            <div className="input-group" style={{ gridColumn: 'span 2' }}>
+                                <label className="input-group__label" style={{ marginBottom: 'var(--space-3)', display: 'block' }}>
+                                    Equipos Asignados
+                                </label>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                    {TEAMS.map((t) => {
+                                        const isSelected = (formData.teams || []).includes(t);
+                                        return (
+                                            <button
+                                                key={t}
+                                                type="button"
+                                                className={`req-form__member-chip ${isSelected ? 'req-form__member-chip--active' : ''}`}
+                                                onClick={() => toggleTeam(t)}
+                                                style={{ justifyContent: 'space-between', padding: '6px 12px', width: 'auto', minHeight: '32px' }}
+                                            >
+                                                <span style={{ fontSize: 'var(--font-size-xs)' }}>{t}</span>
+                                                {isSelected && <Check size={14} className="req-form__member-check" style={{ marginLeft: '4px' }} />}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
 
                             <div className="input-group">

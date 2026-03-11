@@ -59,7 +59,7 @@ export default function RequirementForm() {
         description: '',
         scope: '',
         estimatedHours: '',
-        team: '',
+        teams: [],
         requester: '',
         assignees: [],
         acceptanceCriteria: '',
@@ -70,6 +70,19 @@ export default function RequirementForm() {
         dueDate: '',
         created_at: new Date().toISOString().split('T')[0], // Default today
     });
+
+    const toggleTeam = (teamName) => {
+        setFormData((prev) => {
+            const currentTeams = prev.teams || [];
+            const exists = currentTeams.includes(teamName);
+            return {
+                ...prev,
+                teams: exists
+                    ? currentTeams.filter((t) => t !== teamName)
+                    : [...currentTeams, teamName],
+            };
+        });
+    };
 
     const toggleAssignee = (member) => {
         setFormData((prev) => {
@@ -102,7 +115,7 @@ export default function RequirementForm() {
             if (!formData.created_at) newErrors.created_at = 'La fecha de creación es requerida';
         }
         if (step === 1) {
-            if (!formData.team) newErrors.team = 'Selecciona un equipo';
+            if (!formData.teams || formData.teams.length === 0) newErrors.teams = 'Selecciona al menos un equipo';
         }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -283,18 +296,25 @@ export default function RequirementForm() {
                                     />
                                 </div>
                                 <div className="input-group">
-                                    <label className="input-group__label">Equipo Asignado</label>
-                                    <select
-                                        className={`input-group__field ${errors.team ? 'input-group__field--error' : ''}`}
-                                        value={formData.team}
-                                        onChange={(e) => updateField('team', e.target.value)}
-                                    >
-                                        <option value="">Seleccionar equipo...</option>
-                                        {TEAMS.map((t) => (
-                                            <option key={t} value={t}>{t}</option>
-                                        ))}
-                                    </select>
-                                    {errors.team && <span className="input-group__error">{errors.team}</span>}
+                                    <label className="input-group__label">Equipos Asignados</label>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                        {TEAMS.map((t) => {
+                                            const isSelected = (formData.teams || []).includes(t);
+                                            return (
+                                                <button
+                                                    key={t}
+                                                    type="button"
+                                                    className={`req-form__member-chip ${isSelected ? 'req-form__member-chip--active' : ''}`}
+                                                    onClick={() => toggleTeam(t)}
+                                                    style={{ padding: '6px 12px', width: 'auto', minHeight: '32px' }}
+                                                >
+                                                    <span style={{ fontSize: 'var(--font-size-xs)' }}>{t}</span>
+                                                    {isSelected && <Check size={14} className="req-form__member-check" style={{ marginLeft: '4px' }} />}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                    {errors.teams && <span className="input-group__error">{errors.teams}</span>}
                                 </div>
                             </div>
 
@@ -433,8 +453,19 @@ export default function RequirementForm() {
                                     </span>
                                 </div>
                                 <div className="req-form__review-item">
-                                    <span className="req-form__review-label">Equipo</span>
-                                    <span className="req-form__review-value">{formData.team || '—'}</span>
+                                    <span className="req-form__review-label">Equipos Asignados</span>
+                                    <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+                                        {formData.teams && formData.teams.length > 0 ? formData.teams.map((t) => (
+                                            <span key={t} style={{
+                                                display: 'inline-flex', padding: '4px 10px',
+                                                background: 'var(--color-bg)', border: '1px solid var(--color-border)',
+                                                borderRadius: 'var(--radius-full)', fontSize: 'var(--font-size-xs)',
+                                                fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-secondary)'
+                                            }}>
+                                                {t}
+                                            </span>
+                                        )) : <span className="req-form__review-value">—</span>}
+                                    </div>
                                 </div>
                                 <div className="req-form__review-item">
                                     <span className="req-form__review-label">Miembros Asignados</span>

@@ -259,8 +259,23 @@ export default function RequirementDetail() {
                                 </span>
                             </div>
                             <div className="req-detail__info-item">
-                                <span className="req-detail__info-label">Equipo</span>
-                                <span className="req-detail__info-value">{req.team || '—'}</span>
+                                <span className="req-detail__info-label">Equipos Asignados</span>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '2px' }}>
+                                    {req.teams && req.teams.length > 0 ? (
+                                        req.teams.map((t) => (
+                                            <span key={t} style={{
+                                                display: 'inline-flex', padding: '2px 8px',
+                                                background: 'var(--color-bg)', border: '1px solid var(--color-border)',
+                                                borderRadius: 'var(--radius-full)', fontSize: '11px',
+                                                fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-secondary)'
+                                            }}>
+                                                {t}
+                                            </span>
+                                        ))
+                                    ) : (
+                                        <span className="req-detail__info-value">{req.team || '—'}</span>
+                                    )}
+                                </div>
                             </div>
                             <div className="req-detail__info-item">
                                 <span className="req-detail__info-label">Horas Estimadas</span>
