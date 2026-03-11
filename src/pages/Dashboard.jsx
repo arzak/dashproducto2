@@ -16,13 +16,13 @@ import {
 import './Dashboard.css';
 
 const DEMO_REQUIREMENTS = [
-    { id: '1', title: 'Refactorización de API', status: 'backlog', priority: 'Alta', team: 'Equipo de Desarrollo A', created_at: '2025-10-01', status_in_progress_at: '2025-10-05', status_done_at: '2025-10-09' },
-    { id: '2', title: 'Definición de Requisitos UX', status: 'analisis', priority: 'Media', team: 'Equipo de Diseño UI/UX', created_at: '2025-10-02' },
-    { id: '3', title: 'Sistema de Autenticación MFA', status: 'desarrollo', priority: 'Alta', team: 'Equipo de Desarrollo A', created_at: '2025-10-03', status_in_progress_at: '2025-10-06' },
-    { id: '4', title: 'Dashboard v2.0', status: 'desarrollo', priority: 'Media', team: 'Equipo de Desarrollo A', created_at: '2025-09-28', status_in_progress_at: '2025-10-01' },
-    { id: '5', title: 'Tests de Integración', status: 'done', priority: 'Baja', team: 'QA & Testing', created_at: '2025-09-20', status_in_progress_at: '2025-09-22', status_done_at: '2025-09-25' },
-    { id: '6', title: 'Optimización de Rendimiento', status: 'done', priority: 'Alta', team: 'Equipo de Desarrollo A', created_at: '2025-09-15', status_in_progress_at: '2025-09-17', status_done_at: '2025-09-20' },
-    { id: '7', title: 'Campaña de Email Marketing', status: 'review', priority: 'Baja', team: 'Marketing Digital', created_at: '2025-10-01', status_in_progress_at: '2025-10-04' },
+    { id: '1', title: 'Refactorización de API', status: 'backlog', priority: 'Alta', teams: ['Desarrollo', 'Arquitectura'], created_at: '2025-10-01', status_in_progress_at: '2025-10-05', status_done_at: '2025-10-09' },
+    { id: '2', title: 'Definición de Requisitos UX', status: 'analisis', priority: 'Media', teams: ['Diseño', 'Producto'], created_at: '2025-10-02' },
+    { id: '3', title: 'Sistema de Autenticación MFA', status: 'desarrollo', priority: 'Alta', teams: ['Desarrollo', 'Seguridad'], created_at: '2025-10-03', status_in_progress_at: '2025-10-06' },
+    { id: '4', title: 'Dashboard v2.0', status: 'desarrollo', priority: 'Media', teams: ['Desarrollo', 'Diseño'], created_at: '2025-09-28', status_in_progress_at: '2025-10-01' },
+    { id: '5', title: 'Tests de Integración', status: 'done', priority: 'Baja', teams: ['QA', 'Desarrollo'], created_at: '2025-09-20', status_in_progress_at: '2025-09-22', status_done_at: '2025-09-25' },
+    { id: '6', title: 'Optimización de Rendimiento', status: 'done', priority: 'Alta', teams: ['Desarrollo', 'Performance'], created_at: '2025-09-15', status_in_progress_at: '2025-09-17', status_done_at: '2025-09-20' },
+    { id: '7', title: 'Campaña de Email Marketing', status: 'review', priority: 'Baja', teams: ['Marketing Digital', 'Contenido'], created_at: '2025-10-01', status_in_progress_at: '2025-10-04' },
 ];
 
 

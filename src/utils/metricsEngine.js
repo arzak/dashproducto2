@@ -152,12 +152,27 @@ export function getCycleTimeTrend(requirements) {
 export function getTeamWorkload(requirements) {
     const teamMap = {};
     requirements.forEach((r) => {
-        const team = r.team || 'Sin asignar';
-        if (!teamMap[team]) {
-            teamMap[team] = { total: 0, done: 0 };
+        // Collect all unique teams for this requirement
+        let teams = [];
+        if (Array.isArray(r.teams) && r.teams.length > 0) {
+            teams = r.teams;
+        } else if (r.team) {
+            teams = [r.team];
+        } else {
+            teams = ['Sin asignar'];
         }
-        teamMap[team].total++;
-        if (r.status === 'done') teamMap[team].done++;
+
+        // Deduplicate teams to avoid double counting
+        const uniqueTeams = [...new Set(teams)];
+
+        // Increment counts for each team involved
+        uniqueTeams.forEach(team => {
+            if (!teamMap[team]) {
+                teamMap[team] = { total: 0, done: 0 };
+            }
+            teamMap[team].total++;
+            if (r.status === 'done') teamMap[team].done++;
+        });
     });
 
     return Object.entries(teamMap).map(([name, data]) => ({
