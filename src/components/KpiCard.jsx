@@ -6,8 +6,12 @@ export default function KpiCard({ label, value, trend, trendDirection, subtitle,
             <div className="kpi-card__header">
                 <span className="kpi-card__label">{label}</span>
                 {Icon && (
-                    <div className="kpi-card__icon" style={{ background: iconBg || 'var(--color-primary-light)' }}>
-                        <Icon size={18} />
+                    <div className="kpi-card__icon" style={{ 
+                        background: iconBg || 'var(--color-primary-light)',
+                        color: iconBg ? 'white' : 'var(--color-primary-content)',
+                        boxShadow: iconBg ? `0 4px 12px ${iconBg}40` : 'none'
+                    }}>
+                        <Icon size={20} strokeWidth={2.5} />
                     </div>
                 )}
             </div>

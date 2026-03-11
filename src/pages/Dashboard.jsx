@@ -102,7 +102,7 @@ export default function Dashboard() {
                     trendDirection="up"
                     subtitle="vs. mes anterior"
                     icon={Clock}
-                    iconBg="var(--color-info-bg)"
+                    iconBg="var(--color-info)"
                 />
                 <KpiCard
                     label="Tareas Completadas"
@@ -111,7 +111,7 @@ export default function Dashboard() {
                     trendDirection="up"
                     subtitle="En el periodo actual"
                     icon={CheckCircle}
-                    iconBg="var(--color-success-bg)"
+                    iconBg="var(--color-success)"
                 />
                 <KpiCard
                     label="Eficiencia Global"
@@ -120,7 +120,7 @@ export default function Dashboard() {
                     trendDirection="up"
                     subtitle="Objetivo: 90%"
                     icon={Zap}
-                    iconBg="var(--color-warning-bg)"
+                    iconBg="var(--color-warning)"
                 />
             </div>
 
