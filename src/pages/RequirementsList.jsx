@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { collection, doc, updateDoc, onSnapshot, serverTimestamp, addDoc, Timestamp, getDocs } from 'firebase/firestore';
 import { db, auth } from '../firebase';
@@ -301,8 +302,14 @@ export default function RequirementsList() {
                         {displayedRequirements.map((req) => (
                             <tr key={req.id}>
                                 <td>
-                                    <div style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>
-                                        {req.title}
+                                    <div style={{ fontWeight: 600 }}>
+                                        <RouterLink 
+                                            to={`/requerimiento/${req.id}`}
+                                            title="Ver detalles"
+                                            style={{ color: 'var(--color-info)', textDecoration: 'none' }}
+                                        >
+                                            {req.title}
+                                        </RouterLink>
                                     </div>
                                     <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: '4px' }}>
                                         ID: {req.id.slice(0, 8)}

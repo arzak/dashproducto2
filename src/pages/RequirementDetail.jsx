@@ -58,6 +58,18 @@ export default function RequirementDetail() {
         fetchRequirement();
     }, [id]);
 
+    const handleSetTrackingTeam = async (teamName) => {
+        // Toggle if matching, or set if new
+        const newTeam = req.currentTrackingTeam === teamName ? null : teamName;
+        try {
+            const docRef = doc(db, 'requirements', id);
+            await updateDoc(docRef, { currentTrackingTeam: newTeam });
+            setReq(prev => ({ ...prev, currentTrackingTeam: newTeam }));
+        } catch (err) {
+            console.error('Error al actualizar equipo de seguimiento:', err);
+        }
+    };
+
     const handleLinkGoogleDoc = async () => {
         setDocError('');
         if (!googleDocUrl.trim()) {
@@ -191,6 +203,23 @@ export default function RequirementDetail() {
                             }}>
                                 <Clock size={12} />
                                 {req.timeType === 'definido' ? 'Tiempo Definido' : 'Tiempo Indefinido'}
+                            </span>
+                        )}
+                        {req.currentTrackingTeam && (
+                            <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '4px 12px',
+                                borderRadius: 'var(--radius-full)',
+                                background: 'var(--color-bg)',
+                                border: '1px solid var(--color-border)',
+                                fontSize: 'var(--font-size-xs)',
+                                color: 'var(--color-text-secondary)',
+                                fontWeight: 'var(--font-weight-medium)',
+                            }}>
+                                <Briefcase size={12} />
+                                {req.currentTrackingTeam}
                             </span>
                         )}
                     </div>
@@ -358,18 +387,33 @@ export default function RequirementDetail() {
                             </div>
                             <div className="req-detail__info-item">
                                 <span className="req-detail__info-label">Equipos Asignados</span>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '2px' }}>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px' }}>
+                                    <span style={{ width: '100%', fontSize: '10px', color: 'var(--color-text-muted)', marginBottom: '4px' }}>
+                                        Haz clic en un equipo para marcarlo en seguimiento:
+                                    </span>
                                     {req.teams && req.teams.length > 0 ? (
-                                        req.teams.map((t) => (
-                                            <span key={t} style={{
-                                                display: 'inline-flex', padding: '2px 8px',
-                                                background: 'var(--color-bg)', border: '1px solid var(--color-border)',
-                                                borderRadius: 'var(--radius-full)', fontSize: '11px',
-                                                fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-secondary)'
-                                            }}>
-                                                {t}
-                                            </span>
-                                        ))
+                                        req.teams.map((t) => {
+                                            const isActive = req.currentTrackingTeam === t;
+                                            return (
+                                                <button 
+                                                    key={t}
+                                                    onClick={() => handleSetTrackingTeam(t)}
+                                                    style={{
+                                                        display: 'inline-flex', padding: '4px 10px',
+                                                        background: isActive ? 'var(--color-info-bg)' : 'var(--color-bg)', 
+                                                        border: `1px solid ${isActive ? 'var(--color-info)' : 'var(--color-border)'}`,
+                                                        borderRadius: 'var(--radius-full)', fontSize: '11px',
+                                                        fontWeight: isActive ? 'var(--font-weight-semibold)' : 'var(--font-weight-medium)', 
+                                                        color: isActive ? 'var(--color-info)' : 'var(--color-text-secondary)',
+                                                        cursor: 'pointer',
+                                                        transition: 'all var(--transition-fast)'
+                                                    }}
+                                                    title={isActive ? "Quitar seguimiento de este equipo" : "Marcar como equipo en seguimiento"}
+                                                >
+                                                    {t}
+                                                </button>
+                                            );
+                                        })
                                     ) : (
                                         <span className="req-detail__info-value">{req.team || '—'}</span>
                                     )}
