@@ -95,20 +95,29 @@
     transition: all var(--transition-fast);
     font-size: var(--font-size-sm);
     position: relative;
+    color: var(--color-text-secondary);
+}
+
+.req-form__member-chip:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--color-primary-pale), 0 0 0 4px var(--color-primary);
 }
 
 .req-form__member-chip:hover {
-    border-color: var(--color-primary-light);
-    background: var(--color-primary-pale);
+    border-color: var(--color-primary);
+    background: var(--color-bg);
+    color: var(--color-text-primary);
 }
 
 .req-form__member-chip--active {
     border-color: var(--color-primary);
-    background: var(--color-primary-pale);
-    box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.15);
+    background: var(--color-primary);
+    color: var(--color-primary-content);
+    font-weight: var(--font-weight-medium);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .req-form__member-check {
-    color: var(--color-primary);
+    color: var(--color-primary-content);
     margin-left: auto;
 }

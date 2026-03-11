@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { collection, onSnapshot, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { GripVertical, MoreHorizontal, Eye, Calendar, MessageSquare } from 'lucide-react';
+import { GripVertical, MoreHorizontal, Eye, Calendar, MessageSquare, LayoutDashboard, AlignLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import './KanbanBoard.css';
@@ -59,6 +59,7 @@ const priorityColors = {
 };
 
 export default function KanbanBoard() {
+    const [viewMode, setViewMode] = useState('kanban'); // 'kanban' | 'gantt'
     const [cards, setCards] = useState(DEMO_CARDS);
     const [draggedCard, setDraggedCard] = useState(null);
     const [dragOverColumn, setDragOverColumn] = useState(null);
@@ -131,147 +132,233 @@ export default function KanbanBoard() {
         }
     };
 
+    // Calculate generic Gantt layout positioning for a 12-month span
+    const getGanttStyle = (startDateStr, endDateStr, statusId) => {
+        let start = new Date(startDateStr?.toDate ? startDateStr.toDate() : (startDateStr || Date.now()));
+        // If no end date, project 14 days
+        let end = endDateStr ? new Date(endDateStr) : new Date(start.getTime() + 14 * 24 * 60 * 60 * 1000);
+
+        if (isNaN(start.getTime())) start = new Date();
+        if (isNaN(end.getTime())) end = new Date(start.getTime() + 14 * 24 * 60 * 60 * 1000);
+
+        const currentYear = new Date().getFullYear();
+        const yearStart = new Date(currentYear, 0, 1);
+        const yearEnd = new Date(currentYear, 11, 31);
+        const yearDuration = yearEnd - yearStart;
+
+        let leftPct = Math.max(0, (start - yearStart) / yearDuration * 100);
+        let widthPct = Math.max(2, (end - start) / yearDuration * 100);
+
+        if (leftPct + widthPct > 100) widthPct = 100 - leftPct;
+
+        const columnDef = COLUMNS.find(c => c.id === statusId);
+        const color = columnDef?.color || 'var(--color-primary)';
+
+        return {
+            left: `${leftPct}%`,
+            width: `${widthPct}%`,
+            background: color,
+        };
+    };
+
+    const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
     return (
-        <div className="kanban">
-            <div className="page-header">
+        <div className="kanban animate-fade-in">
+            <div className="page-header" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div className="page-header__title">
-                    <h1>Tablero Kanban</h1>
+                    <h1>Tablero de Trabajo</h1>
                     <p>Seguimiento detallado del ciclo de vida del software en tiempo real.</p>
+                </div>
+                <div style={{ display: 'flex', gap: '4px', background: 'var(--color-surface)', padding: '4px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border-light)' }}>
+                    <button
+                        className={`btn btn--ghost ${viewMode === 'kanban' ? 'btn--primary' : ''}`}
+                        onClick={() => setViewMode('kanban')}
+                        style={{ padding: '8px 16px', borderRadius: 'var(--radius-md)', height: 'auto', gap: '8px', color: viewMode === 'kanban' ? 'var(--color-primary-content)' : '' }}
+                    >
+                        <LayoutDashboard size={16} /> Kanban
+                    </button>
+                    <button
+                        className={`btn btn--ghost ${viewMode === 'gantt' ? 'btn--primary' : ''}`}
+                        onClick={() => setViewMode('gantt')}
+                        style={{ padding: '8px 16px', borderRadius: 'var(--radius-md)', height: 'auto', gap: '8px', color: viewMode === 'gantt' ? 'var(--color-primary-content)' : '' }}
+                    >
+                        <AlignLeft size={16} /> Gantt
+                    </button>
                 </div>
             </div>
 
-            <div className="kanban__board">
-                {COLUMNS.map((column) => {
-                    const columnCards = getColumnCards(column.id);
-                    return (
-                        <div
-                            key={column.id}
-                            className={`kanban__column ${dragOverColumn === column.id ? 'kanban__column--drag-over' : ''}`}
-                            onDragOver={(e) => handleDragOver(e, column.id)}
-                            onDragLeave={handleDragLeave}
-                            onDrop={(e) => handleDrop(e, column.id)}
-                        >
-                            <div className="kanban__column-header">
-                                <div className="kanban__column-title">
-                                    <span
-                                        className="kanban__column-dot"
-                                        style={{ background: column.color }}
-                                    />
-                                    <span>{column.label}</span>
+            {viewMode === 'kanban' ? (
+                <div className="kanban__board animate-slide-in">
+                    {COLUMNS.map((column) => {
+                        const columnCards = getColumnCards(column.id);
+                        return (
+                            <div
+                                key={column.id}
+                                className={`kanban__column ${dragOverColumn === column.id ? 'kanban__column--drag-over' : ''}`}
+                                onDragOver={(e) => handleDragOver(e, column.id)}
+                                onDragLeave={handleDragLeave}
+                                onDrop={(e) => handleDrop(e, column.id)}
+                            >
+                                <div className="kanban__column-header">
+                                    <div className="kanban__column-title">
+                                        <span
+                                            className="kanban__column-dot"
+                                            style={{ background: column.color }}
+                                        />
+                                        <span>{column.label}</span>
+                                    </div>
+                                    <span className="kanban__column-count">{columnCards.length}</span>
                                 </div>
-                                <span className="kanban__column-count">{columnCards.length}</span>
-                            </div>
 
-                            <div className="kanban__cards">
-                                {columnCards.map((card) => (
-                                    <div
-                                        key={card.id}
-                                        className="kanban-card"
-                                        draggable
-                                        onDragStart={(e) => handleDragStart(e, card)}
-                                        onDragEnd={handleDragEnd}
-                                        onClick={() => {
-                                            if (!wasDragged.current) {
-                                                navigate(`/requerimiento/${card.id}`);
-                                            }
-                                            wasDragged.current = false;
-                                        }}
-                                        style={{ cursor: 'pointer' }}
-                                    >
-                                        {card.priority && (
-                                            <span
-                                                className="badge"
-                                                style={{
-                                                    background: priorityColors[card.priority]?.bg,
-                                                    color: priorityColors[card.priority]?.color,
-                                                }}
-                                            >
-                                                {card.priority}
-                                            </span>
-                                        )}
-
-                                        <h4 className="kanban-card__title">{card.title}</h4>
-                                        <p className="kanban-card__desc">{card.description}</p>
-
-                                        {card.progress !== undefined && (
-                                            <div style={{ marginTop: 'var(--space-3)' }}>
-                                                <div className="progress-bar">
-                                                    <div
-                                                        className="progress-bar__fill"
-                                                        style={{ width: `${card.progress}%` }}
-                                                    />
-                                                </div>
-                                                <span style={{
-                                                    fontSize: 'var(--font-size-xs)',
-                                                    color: 'var(--color-text-muted)',
-                                                    marginTop: '4px',
-                                                    display: 'block',
-                                                    textAlign: 'right',
-                                                }}>
-                                                    {card.progress}%
+                                <div className="kanban__cards">
+                                    {columnCards.map((card) => (
+                                        <div
+                                            key={card.id}
+                                            className="kanban-card"
+                                            draggable
+                                            onDragStart={(e) => handleDragStart(e, card)}
+                                            onDragEnd={handleDragEnd}
+                                            onClick={() => {
+                                                if (!wasDragged.current) {
+                                                    navigate(`/requerimiento/${card.id}`);
+                                                }
+                                                wasDragged.current = false;
+                                            }}
+                                            style={{ cursor: 'pointer' }}
+                                        >
+                                            {card.priority && (
+                                                <span
+                                                    className="badge"
+                                                    style={{
+                                                        background: priorityColors[card.priority]?.bg,
+                                                        color: priorityColors[card.priority]?.color,
+                                                    }}
+                                                >
+                                                    {card.priority}
                                                 </span>
-                                            </div>
-                                        )}
+                                            )}
 
-                                        <div className="kanban-card__footer">
-                                            <div className="kanban-card__assignees">
-                                                {card.assignees?.slice(0, 3).map((a, i) => (
-                                                    <div
-                                                        key={a.id || i}
-                                                        className="avatar avatar--sm"
-                                                        title={a.name || a}
-                                                        style={{
-                                                            background: a.color || (i === 0 ? 'var(--color-primary)' : 'var(--color-text-muted)'),
-                                                            marginLeft: i > 0 ? '-6px' : 0,
-                                                            border: '2px solid var(--color-surface)',
-                                                        }}
-                                                    >
-                                                        {a.initials ? a.initials[0] : (typeof a === 'string' ? a[0] : '?')}
-                                                    </div>
-                                                ))}
-                                                {card.assignees && card.assignees.length > 3 && (
-                                                    <div
-                                                        className="avatar avatar--sm"
-                                                        style={{
-                                                            background: 'var(--color-neutral-200)',
-                                                            color: 'var(--color-text-secondary)',
-                                                            marginLeft: '-6px',
-                                                            border: '2px solid var(--color-surface)',
-                                                            fontSize: '10px',
-                                                        }}
-                                                    >
-                                                        +{card.assignees.length - 3}
-                                                    </div>
-                                                )}
-                                                {card.assignees && card.assignees.length === 1 && (
-                                                    <span className="kanban-card__assignee-name">
-                                                        {card.assignees[0].name || card.assignees[0]}
-                                                    </span>
-                                                )}
-                                            </div>
+                                            <h4 className="kanban-card__title">{card.title}</h4>
+                                            <p className="kanban-card__desc">{card.description}</p>
 
-                                            <div className="kanban-card__meta">
-                                                {card.comments && (
-                                                    <span className="kanban-card__meta-item">
-                                                        <MessageSquare size={12} />
-                                                        {card.comments}
+                                            {card.progress !== undefined && (
+                                                <div style={{ marginTop: 'var(--space-3)' }}>
+                                                    <div className="progress-bar">
+                                                        <div
+                                                            className="progress-bar__fill"
+                                                            style={{ width: `${card.progress}%` }}
+                                                        />
+                                                    </div>
+                                                    <span style={{
+                                                        fontSize: 'var(--font-size-xs)',
+                                                        color: 'var(--color-text-muted)',
+                                                        marginTop: '4px',
+                                                        display: 'block',
+                                                        textAlign: 'right',
+                                                    }}>
+                                                        {card.progress}%
                                                     </span>
-                                                )}
-                                                {card.dueDate && (
-                                                    <span className="kanban-card__meta-item">
-                                                        <Calendar size={12} />
-                                                        {card.dueDate}
-                                                    </span>
-                                                )}
+                                                </div>
+                                            )}
+
+                                            <div className="kanban-card__footer">
+                                                <div className="kanban-card__assignees">
+                                                    {card.assignees?.slice(0, 3).map((a, i) => (
+                                                        <div
+                                                            key={a.id || i}
+                                                            className="avatar avatar--sm"
+                                                            title={a.name || a}
+                                                            style={{
+                                                                background: a.color || (i === 0 ? 'var(--color-primary)' : 'var(--color-text-muted)'),
+                                                                marginLeft: i > 0 ? '-6px' : 0,
+                                                                border: '2px solid var(--color-surface)',
+                                                            }}
+                                                        >
+                                                            {a.initials ? a.initials[0] : (typeof a === 'string' ? a[0] : '?')}
+                                                        </div>
+                                                    ))}
+                                                    {card.assignees && card.assignees.length > 3 && (
+                                                        <div
+                                                            className="avatar avatar--sm"
+                                                            style={{
+                                                                background: 'var(--color-neutral-200)',
+                                                                color: 'var(--color-text-secondary)',
+                                                                marginLeft: '-6px',
+                                                                border: '2px solid var(--color-surface)',
+                                                                fontSize: '10px',
+                                                            }}
+                                                        >
+                                                            +{card.assignees.length - 3}
+                                                        </div>
+                                                    )}
+                                                    {card.assignees && card.assignees.length === 1 && (
+                                                        <span className="kanban-card__assignee-name">
+                                                            {card.assignees[0].name || card.assignees[0]}
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                <div className="kanban-card__meta">
+                                                    {card.comments && (
+                                                        <span className="kanban-card__meta-item">
+                                                            <MessageSquare size={12} />
+                                                            {card.comments}
+                                                        </span>
+                                                    )}
+                                                    {card.dueDate && (
+                                                        <span className="kanban-card__meta-item">
+                                                            <Calendar size={12} />
+                                                            {card.dueDate}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            ) : (
+                <div className="gantt-board animate-slide-in">
+                    <div className="gantt-container">
+                        <div className="gantt-header">
+                            <div className="gantt-task-info-header">Requerimiento & Estimación</div>
+                            <div className="gantt-timeline-header">
+                                {MONTHS.map(m => <div key={m} className="gantt-month">{m}</div>)}
+                            </div>
+                        </div>
+                        <div className="gantt-body">
+                            {cards.map(card => {
+                                const style = getGanttStyle(card.created_at, card.dueDate, card.status);
+                                const columnDef = COLUMNS.find(c => c.id === card.status);
+                                return (
+                                    <div key={card.id} className="gantt-row" onClick={() => navigate(`/requerimiento/${card.id}`)} style={{ cursor: 'pointer' }}>
+                                        <div className="gantt-task-info">
+                                            <h4 className="gantt-task-title">{card.title}</h4>
+                                            <p className="gantt-task-status" style={{ color: columnDef?.color }}>
+                                                {columnDef?.label || 'Backlog'}
+                                            </p>
+                                        </div>
+                                        <div className="gantt-timeline-row">
+                                            <div className="gantt-grid-lines">
+                                                {MONTHS.map((m, i) => <div key={`line-${i}`} className="gantt-grid-line" />)}
+                                            </div>
+                                            <div className="gantt-bar-wrapper">
+                                                <div className="gantt-bar" style={style}>
+                                                    <span className="gantt-bar-title">{card.title}</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                ))}
-                            </div>
+                                );
+                            })}
                         </div>
-                    );
-                })}
-            </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
