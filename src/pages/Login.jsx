@@ -1,17 +1,20 @@
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Logo from '../components/Logo';
 import './Login.css';
 
 export default function Login() {
     const { login, currentUser, loading } = useAuth();
+    const location = useLocation();
     const [error, setError] = useState(null);
     const [signingIn, setSigningIn] = useState(false);
 
-    // If already logged in, redirect to home
+    // If already logged in, redirect to home or previous route
+    const from = location.state?.from?.pathname || '/';
+
     if (!loading && currentUser) {
-        return <Navigate to="/" replace />;
+        return <Navigate to={from} replace />;
     }
 
     const handleLogin = async () => {

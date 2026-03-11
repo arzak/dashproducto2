@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { collection, addDoc, serverTimestamp, getDocs, Timestamp } from 'firebase/firestore';
-import { useNavigate } from 'react-router-dom';
-import { X, ArrowRight, ArrowLeft, Filter, Triangle, Asterisk, Info, UserPlus, Check, Link, CalendarCheck } from 'lucide-react';
+import { useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { X, ArrowRight, ArrowLeft, Filter, Triangle, Asterisk, Info, UserPlus, Check, Link, CalendarCheck, CheckCircle } from 'lucide-react';
 import { db } from '../firebase';
+import { useAuth } from '../context/AuthContext';
 import './RequirementForm.css';
 
 const STEPS = [
@@ -34,8 +35,11 @@ const TEAMS = [
 
 export default function RequirementForm() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const { currentUser, loading: authLoading } = useAuth();
     const [step, setStep] = useState(0);
     const [submitting, setSubmitting] = useState(false);
+    const [isSubmitted, setIsSubmitted] = useState(false);
     const [availableMembers, setAvailableMembers] = useState([]);
 
     useEffect(() => {
@@ -155,13 +159,38 @@ export default function RequirementForm() {
                 status: 'backlog',
                 created_at: creationDate,
             });
-            navigate('/');
+            setIsSubmitted(true);
         } catch (err) {
             console.error('Submit error:', err);
-            navigate('/');
+            // Optionally set error text here
         }
         setSubmitting(false);
     };
+
+    if (authLoading) return <div className="req-form-overlay"><div className="req-form__loading">Verificando sesión...</div></div>;
+    if (!currentUser) return <Navigate to="/login" state={{ from: location }} replace />;
+
+    if (isSubmitted) {
+        return (
+            <div className="req-form-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div className="req-form__success-card" style={{
+                    background: 'var(--color-bg)',
+                    borderRadius: 'var(--radius-lg)',
+                    padding: 'var(--space-8)',
+                    maxWidth: '400px',
+                    width: '100%',
+                    textAlign: 'center',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                }}>
+                    <CheckCircle size={64} style={{ color: 'var(--color-success)', margin: '0 auto var(--space-4)', display: 'block' }} />
+                    <h2 style={{ marginBottom: 'var(--space-2)' }}>Requerimiento Creado</h2>
+                    <p style={{ color: 'var(--color-text-muted)', margin: 0 }}>
+                        El requerimiento se ha guardado correctamente en el sistema.
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="req-form-overlay">
