@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { collection, onSnapshot, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { GripVertical, MoreHorizontal, Eye, Calendar, MessageSquare, LayoutDashboard, AlignLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -132,22 +132,62 @@ export default function KanbanBoard() {
         }
     };
 
-    // Calculate generic Gantt layout positioning for a 12-month span
+    const ganttMetrics = useMemo(() => {
+        if (!cards || cards.length === 0) {
+            const now = new Date();
+            return {
+                start: new Date(now.getFullYear(), now.getMonth(), 1),
+                end: new Date(now.getFullYear(), now.getMonth() + 6, 0),
+                duration: 6 * 30 * 24 * 3600 * 1000
+            };
+        }
+
+        let minD = new Date();
+        let maxD = new Date(minD.getTime() + 14 * 24 * 3600 * 1000);
+
+        cards.forEach(c => {
+            let s = new Date(c.created_at?.toDate ? c.created_at.toDate() : (c.created_at || Date.now()));
+            if (isNaN(s.getTime())) s = new Date();
+            let e = c.dueDate ? new Date(c.dueDate) : new Date(s.getTime() + 14 * 24 * 3600 * 1000);
+            if (isNaN(e.getTime())) e = new Date(s.getTime() + 14 * 24 * 3600 * 1000);
+
+            if (s < minD) minD = s;
+            if (e > maxD) maxD = e;
+        });
+
+        minD = new Date(minD.getFullYear(), minD.getMonth(), 1);
+        maxD = new Date(maxD.getFullYear(), maxD.getMonth() + 1, 0);
+
+        const minEnd = new Date(minD.getFullYear(), minD.getMonth() + 6, 0);
+        if (maxD < minEnd) maxD = minEnd;
+
+        return { start: minD, end: maxD, duration: maxD.getTime() - minD.getTime() };
+    }, [cards]);
+
+    const ganttMonths = useMemo(() => {
+        const months = [];
+        const { start, end } = ganttMetrics;
+        let p = new Date(start.getFullYear(), start.getMonth(), 1);
+        while (p <= end) {
+            const mStr = p.toLocaleString('es-ES', { month: 'long' });
+            const label = mStr.charAt(0).toUpperCase() + mStr.slice(1);
+            months.push({ id: p.getTime(), label });
+            p.setMonth(p.getMonth() + 1);
+        }
+        return months;
+    }, [ganttMetrics]);
+
     const getGanttStyle = (startDateStr, endDateStr, statusId) => {
         let start = new Date(startDateStr?.toDate ? startDateStr.toDate() : (startDateStr || Date.now()));
-        // If no end date, project 14 days
-        let end = endDateStr ? new Date(endDateStr) : new Date(start.getTime() + 14 * 24 * 60 * 60 * 1000);
-
         if (isNaN(start.getTime())) start = new Date();
+
+        let end = endDateStr ? new Date(endDateStr) : new Date(start.getTime() + 14 * 24 * 60 * 60 * 1000);
         if (isNaN(end.getTime())) end = new Date(start.getTime() + 14 * 24 * 60 * 60 * 1000);
 
-        const currentYear = new Date().getFullYear();
-        const yearStart = new Date(currentYear, 0, 1);
-        const yearEnd = new Date(currentYear, 11, 31);
-        const yearDuration = yearEnd - yearStart;
+        const { start: timelineStart, duration } = ganttMetrics;
 
-        let leftPct = Math.max(0, (start - yearStart) / yearDuration * 100);
-        let widthPct = Math.max(2, (end - start) / yearDuration * 100);
+        let leftPct = Math.max(0, (start.getTime() - timelineStart.getTime()) / duration * 100);
+        let widthPct = Math.max(1, (end.getTime() - start.getTime()) / duration * 100);
 
         if (leftPct + widthPct > 100) widthPct = 100 - leftPct;
 
@@ -160,8 +200,6 @@ export default function KanbanBoard() {
             background: color,
         };
     };
-
-    const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
     return (
         <div className="kanban animate-fade-in">
@@ -326,8 +364,8 @@ export default function KanbanBoard() {
                     <div className="gantt-container">
                         <div className="gantt-header">
                             <div className="gantt-task-info-header">Requerimiento & Estimación</div>
-                            <div className="gantt-timeline-header">
-                                {MONTHS.map(m => <div key={m} className="gantt-month">{m}</div>)}
+                            <div className="gantt-timeline-header" style={{ minWidth: `${ganttMonths.length * 80}px` }}>
+                                {ganttMonths.map(m => <div key={m.id} className="gantt-month">{m.label}</div>)}
                             </div>
                         </div>
                         <div className="gantt-body">
@@ -337,14 +375,14 @@ export default function KanbanBoard() {
                                 return (
                                     <div key={card.id} className="gantt-row" onClick={() => navigate(`/requerimiento/${card.id}`)} style={{ cursor: 'pointer' }}>
                                         <div className="gantt-task-info">
-                                            <h4 className="gantt-task-title">{card.title}</h4>
+                                            <h4 className="gantt-task-title" title={card.title}>{card.title}</h4>
                                             <p className="gantt-task-status" style={{ color: columnDef?.color }}>
                                                 {columnDef?.label || 'Backlog'}
                                             </p>
                                         </div>
-                                        <div className="gantt-timeline-row">
+                                        <div className="gantt-timeline-row" style={{ minWidth: `${ganttMonths.length * 80}px` }}>
                                             <div className="gantt-grid-lines">
-                                                {MONTHS.map((m, i) => <div key={`line-${i}`} className="gantt-grid-line" />)}
+                                                {ganttMonths.map(m => <div key={`line-${m.id}`} className="gantt-grid-line" />)}
                                             </div>
                                             <div className="gantt-bar-wrapper">
                                                 <div className="gantt-bar" style={style}>
