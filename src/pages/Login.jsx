@@ -20,7 +20,7 @@ export default function Login() {
         try {
             await login();
         } catch (err) {
-            setError('No se pudo iniciar sesión. Intenta de nuevo.');
+            setError(err.message || 'No se pudo iniciar sesión. Intenta de nuevo.');
             setSigningIn(false);
         }
     };

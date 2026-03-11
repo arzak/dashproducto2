@@ -8,6 +8,7 @@ import Login from './pages/Login';
 import Team from './pages/Team';
 import RequirementsList from './pages/RequirementsList';
 import RequirementDetail from './pages/RequirementDetail';
+import Ajustes from './pages/Ajustes';
 import { useAuth } from './context/AuthContext';
 
 function AppLayout({ children }) {
@@ -68,21 +69,7 @@ export default function App() {
                 <Route path="/tareas" element={<RequirementsList />} />
                 <Route path="/reportes" element={<Dashboard />} />
                 <Route path="/equipo" element={<Team />} />
-                <Route path="/ajustes" element={
-                    <div className="animate-fade-in">
-                        <div className="page-header">
-                            <div className="page-header__title">
-                                <h1>Ajustes</h1>
-                                <p>Configuración general del sistema.</p>
-                            </div>
-                        </div>
-                        <div className="card" style={{ padding: 'var(--space-16)', textAlign: 'center' }}>
-                            <p style={{ fontSize: 'var(--font-size-lg)', color: 'var(--color-text-muted)' }}>
-                                Módulo de ajustes — próximamente
-                            </p>
-                        </div>
-                    </div>
-                } />
+                <Route path="/ajustes" element={<Ajustes />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
         </AppLayout>

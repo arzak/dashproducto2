@@ -46,6 +46,12 @@ service cloud.firestore {
       allow read: if isAdmin();
     }
     
+    // Reglas para la colección 'settings' (configuración general)
+    match /settings/{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
     // Regla de seguridad por defecto para bloquear cualquier otra colección no prevista
     match /{document=**} {
       allow read, write: if false;

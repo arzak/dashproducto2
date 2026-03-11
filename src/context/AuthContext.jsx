@@ -25,9 +25,35 @@ export function AuthProvider({ children }) {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             clearTimeout(loadingFallbackTimeout);
             if (user) {
-                setCurrentUser(user);
                 try {
-                    // Try to get user role, but don't hang forever
+                    // Start by checking domain
+                    const email = user.email;
+                    if (email) {
+                        const domain = email.substring(email.lastIndexOf('@')).toLowerCase();
+                        let allowedDomains = ['@globalt.com.mx', '@mhs.com.mx'];
+                        
+                        try {
+                            const settingsDoc = await getDoc(doc(db, 'settings', 'auth'));
+                            if (settingsDoc.exists() && settingsDoc.data().allowedDomains) {
+                                allowedDomains = settingsDoc.data().allowedDomains.map(d => d.toLowerCase().trim());
+                            }
+                        } catch (settingsError) {
+                            console.warn("Could not fetch settings for domains, using defaults", settingsError);
+                        }
+                        
+                        if (!allowedDomains.includes(domain)) {
+                            await signOut(auth);
+                            setCurrentUser(null);
+                            setRole(null);
+                            setLoading(false);
+                            return; // Bloquea si no está permitido
+                        }
+                    }
+
+                    // Domain is allowed, set user
+                    setCurrentUser(user);
+                    
+                    // Now get user role, but don't hang forever
                     const fetchUserDoc = getDoc(doc(db, 'users', user.uid));
                     // 5-second timeout to prevent the app from freezing if Firestore has issues
                     const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000));
@@ -83,6 +109,28 @@ export function AuthProvider({ children }) {
                 prompt: 'select_account',
             });
             const result = await signInWithPopup(auth, googleProvider);
+            
+            // Validar inmediatamente en el login
+            const email = result.user.email;
+            if (email) {
+                const domain = email.substring(email.lastIndexOf('@')).toLowerCase();
+                let allowedDomains = ['@globalt.com.mx', '@mhs.com.mx'];
+                
+                try {
+                    const settingsDoc = await getDoc(doc(db, 'settings', 'auth'));
+                    if (settingsDoc.exists() && settingsDoc.data().allowedDomains) {
+                        allowedDomains = settingsDoc.data().allowedDomains.map(d => d.toLowerCase().trim());
+                    }
+                } catch (settingsError) {
+                    console.warn("Could not fetch settings for domains on login, using defaults", settingsError);
+                }
+                
+                if (!allowedDomains.includes(domain)) {
+                    await signOut(auth);
+                    throw new Error('Tu correo no tiene permisos para acceder. Contacta a un administrador. (' + domain + ' no permitido)');
+                }
+            }
+            
             return result;
         } catch (err) {
             // If popup blocked, the auth state listener will still catch it
