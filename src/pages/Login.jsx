@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogIn } from 'lucide-react';
+import Logo from '../components/Logo';
 import './Login.css';
 
 export default function Login() {
@@ -30,10 +30,10 @@ export default function Login() {
             <div className="login__card">
                 <div className="login__logo">
                     <div className="sidebar__logo" style={{ width: 48, height: 48 }}>
-                        <LogIn size={22} />
+                        <Logo size={28} />
                     </div>
                 </div>
-                <h2 className="login__title">Gestión Pro</h2>
+                <h2 className="login__title">Gestión de proyectos</h2>
                 <p className="login__subtitle">Ciclo de Vida de Requerimientos</p>
 
                 {error && (

@@ -1,16 +1,16 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import {
-    LayoutDashboard,
     CheckSquare,
     Users,
     BarChart3,
     Settings,
     Plus,
 } from 'lucide-react';
+import Logo from './Logo';
 import './Sidebar.css';
 
 const navItems = [
-    { path: '/', icon: LayoutDashboard, label: 'Tablero' },
+    { path: '/', icon: Logo, label: 'Tablero' },
     { path: '/tareas', icon: CheckSquare, label: 'Requerimientos' },
     { path: '/equipo', icon: Users, label: 'Equipo' },
     { path: '/reportes', icon: BarChart3, label: 'Reportes' },
@@ -24,7 +24,7 @@ export default function Sidebar() {
         <aside className="sidebar">
             <div className="sidebar__brand">
                 <div className="sidebar__logo">
-                    <LayoutDashboard size={20} />
+                    <Logo size={24} />
                 </div>
                 <div>
                     <div className="sidebar__brand-name">Gestión Pro</div>
@@ -42,7 +42,11 @@ export default function Sidebar() {
                             `sidebar__link ${isActive ? 'sidebar__link--active' : ''}`
                         }
                     >
-                        <Icon size={18} />
+                        {Icon === Logo ? (
+                            <Icon size={18} className="sidebar-nav-icon" />
+                        ) : (
+                            <Icon size={18} />
+                        )}
                         <span>{label}</span>
                     </NavLink>
                 ))}

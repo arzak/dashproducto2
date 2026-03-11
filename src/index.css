@@ -6,10 +6,11 @@
 /* ---------- CSS Custom Properties ---------- */
 :root {
   /* Brand Colors */
-  --color-primary: #14B8A6;
-  --color-primary-hover: #0D9488;
-  --color-primary-light: #E0F7F4;
-  --color-primary-pale: #F0FDFA;
+  --color-primary: #FDDF3E;
+  --color-primary-hover: #EAC92B;
+  --color-primary-light: #FEF7D1;
+  --color-primary-pale: #FFFCF0;
+  --color-primary-content: #1E293B;
 
   /* Neutrals */
   --color-bg: #F8FAFB;
@@ -342,7 +343,8 @@ p {
 
 .btn--primary {
   background: var(--color-primary);
-  color: var(--color-text-inverse);
+  color: var(--color-primary-content);
+  font-weight: var(--font-weight-semibold);
 }
 
 .btn--primary:hover {

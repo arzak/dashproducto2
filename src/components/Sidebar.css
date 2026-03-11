@@ -87,7 +87,7 @@
     width: 100%;
     padding: var(--space-3) var(--space-4);
     background: var(--color-primary);
-    color: var(--color-text-inverse);
+    color: var(--color-primary-content);
     font-weight: var(--font-weight-semibold);
     font-size: var(--font-size-base);
     border-radius: var(--radius-md);
