@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import {
     ArrowLeft, Calendar, Clock, Users, FileText, Link as LinkIcon,
-    ExternalLink, BookOpen, Shield, CalendarCheck, Tag, User, Briefcase,
+    ExternalLink, BookOpen, Shield, CalendarCheck, Tag, User, Briefcase, Plus, Loader2, Unlink
 } from 'lucide-react';
+import GoogleDocViewer from '../components/GoogleDocViewer';
 import './RequirementDetail.css';
 
 const STATUS_LABELS = {
@@ -37,6 +38,9 @@ export default function RequirementDetail() {
     const navigate = useNavigate();
     const [req, setReq] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [googleDocUrl, setGoogleDocUrl] = useState('');
+    const [isSavingDoc, setIsSavingDoc] = useState(false);
+    const [docError, setDocError] = useState('');
 
     useEffect(() => {
         const fetchRequirement = async () => {
@@ -53,6 +57,49 @@ export default function RequirementDetail() {
         };
         fetchRequirement();
     }, [id]);
+
+    const handleLinkGoogleDoc = async () => {
+        setDocError('');
+        if (!googleDocUrl.trim()) {
+            setDocError('Por favor ingresa una URL válida.');
+            return;
+        }
+
+        const match = googleDocUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
+        if (!match || !match[1]) {
+            setDocError('URL de Google Docs inválida. Asegúrate de que contenga /d/DOCUMENT_ID/');
+            return;
+        }
+
+        const documentId = match[1];
+
+        setIsSavingDoc(true);
+        try {
+            const docRef = doc(db, 'requirements', id);
+            await updateDoc(docRef, { googleDocId: documentId });
+            setReq(prev => ({ ...prev, googleDocId: documentId }));
+            setGoogleDocUrl('');
+        } catch (err) {
+            console.error('Error al vincular documento:', err);
+            setDocError('No se pudo vincular el documento en la base de datos.');
+        } finally {
+            setIsSavingDoc(false);
+        }
+    };
+
+    const handleUnlinkGoogleDoc = async () => {
+        if (!window.confirm('¿Seguro que deseas desvincular este documento de Google?')) return;
+        setIsSavingDoc(true);
+        try {
+            const docRef = doc(db, 'requirements', id);
+            await updateDoc(docRef, { googleDocId: null });
+            setReq(prev => ({ ...prev, googleDocId: null }));
+        } catch (err) {
+            console.error('Error al desvincular documento:', err);
+        } finally {
+            setIsSavingDoc(false);
+        }
+    };
 
     const formatDate = (dateValue) => {
         if (!dateValue) return '—';
@@ -240,6 +287,57 @@ export default function RequirementDetail() {
                             </div>
                         </div>
                     )}
+
+                    {/* Google Docs integration */}
+                    <div className="req-detail__section">
+                        <div className="req-detail__section-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <FileText size={14} />
+                                Documento Extendido (Google Docs)
+                            </div>
+                            {req.googleDocId && (
+                                <button 
+                                    className="req-detail__action-btn req-detail__action-btn--danger"
+                                    onClick={handleUnlinkGoogleDoc}
+                                    disabled={isSavingDoc}
+                                    title="Desvincular Google Doc"
+                                >
+                                    {isSavingDoc ? <Loader2 size={14} className="gdoc-viewer__spinner" /> : <Unlink size={14} />}
+                                    Desvincular
+                                </button>
+                            )}
+                        </div>
+                        
+                        {!req.googleDocId ? (
+                            <div className="req-detail__gdoc-input-wrapper">
+                                <div className="req-detail__gdoc-input-group">
+                                    <input 
+                                        type="text" 
+                                        className="req-detail__gdoc-input" 
+                                        placeholder="Ej: https://docs.google.com/document/d/1XyZ..."
+                                        value={googleDocUrl}
+                                        onChange={(e) => setGoogleDocUrl(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleLinkGoogleDoc()}
+                                        disabled={isSavingDoc}
+                                    />
+                                    <button 
+                                        className="req-detail__gdoc-btn" 
+                                        onClick={handleLinkGoogleDoc}
+                                        disabled={isSavingDoc}
+                                    >
+                                        {isSavingDoc ? <Loader2 size={16} className="gdoc-viewer__spinner" /> : <LinkIcon size={16} />}
+                                        Vincular
+                                    </button>
+                                </div>
+                                {docError && <div className="req-detail__gdoc-error">{docError}</div>}
+                                <p className="req-detail__gdoc-help">
+                                    Pega la URL del Google Doc. Asegúrate de que el documento sea público para lectura o que la API de Google tenga acceso.
+                                </p>
+                            </div>
+                        ) : (
+                            <GoogleDocViewer documentId={req.googleDocId} />
+                        )}
+                    </div>
                 </div>
 
                 {/* RIGHT — Sidebar info */}
