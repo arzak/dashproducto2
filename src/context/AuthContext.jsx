@@ -13,6 +13,7 @@ export function useAuth() {
 
 export function AuthProvider({ children }) {
     const [currentUser, setCurrentUser] = useState(null);
+    const [userData, setUserData] = useState(null);
     const [role, setRole] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -67,7 +68,9 @@ export function AuthProvider({ children }) {
                     const userDoc = await Promise.race([fetchUserDoc, timeout]);
 
                     if (userDoc.exists()) {
-                        setRole(userDoc.data().role || 'Dev');
+                        const data = userDoc.data();
+                        setUserData(data);
+                        setRole(data.role || 'Dev');
                     } else {
                         // Generate initials from display name
                         const names = user.displayName ? user.displayName.split(' ') : ['User'];
@@ -80,7 +83,7 @@ export function AuthProvider({ children }) {
                         const colors = ['#14B8A6', '#8B5CF6', '#F59E0B', '#EC4899', '#3B82F6', '#10B981', '#EF4444', '#6366F1'];
                         const color = colors[Math.floor(Math.random() * colors.length)];
 
-                        await setDoc(doc(db, 'users', user.uid), {
+                        const newUser = {
                             email: user.email,
                             name: user.displayName || 'Unnamed User',
                             photoURL: user.photoURL,
@@ -90,7 +93,10 @@ export function AuthProvider({ children }) {
                             color: color,
                             status: 'activo',
                             createdAt: new Date().toISOString(),
-                        });
+                        };
+
+                        await setDoc(doc(db, 'users', user.uid), newUser);
+                        setUserData(newUser);
                         setRole('Dev');
                     }
                 } catch (error) {
@@ -101,6 +107,7 @@ export function AuthProvider({ children }) {
                 }
             } else {
                 setCurrentUser(null);
+                setUserData(null);
                 setRole(null);
                 setLoading(false);
             }
@@ -160,7 +167,7 @@ export function AuthProvider({ children }) {
         }
     };
 
-    const value = { currentUser, role, loading, login, logout };
+    const value = { currentUser, userData, role, loading, login, logout };
 
     return (
         <AuthContext.Provider value={value}>

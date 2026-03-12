@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, Timestamp, doc, getDoc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { Send, MessageSquare, Clock, User, Loader2 } from 'lucide-react';
@@ -10,7 +10,7 @@ export default function RequirementComments({ requirementId }) {
     const [newComment, setNewComment] = useState('');
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
-    const { currentUser } = useAuth();
+    const { currentUser, userData } = useAuth();
 
     useEffect(() => {
         if (!requirementId) return;
@@ -39,23 +39,21 @@ export default function RequirementComments({ requirementId }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!newComment.trim() || sending) return;
+        if (!newComment.trim() || sending || !currentUser) {
+            if (!currentUser) alert("Debes iniciar sesión para comentar.");
+            return;
+        }
 
         setSending(true);
         try {
-            // Get user data from local user state (role/initials/color) or use defaults
-            // We'll fetch the user doc once to have better initials/color
-            const userDocSnap = await getDoc(doc(db, 'users', currentUser?.uid));
-            const userData = userDocSnap.exists() ? userDocSnap.data() : {};
-            
             const commentData = {
                 text: newComment.trim(),
-                author_name: userData.name || currentUser?.displayName || currentUser?.email || 'Usuario',
+                author_name: userData?.name || currentUser?.displayName || currentUser?.email || 'Usuario',
                 author_uid: currentUser?.uid,
                 author_email: currentUser?.email,
                 created_at: serverTimestamp(),
-                author_initials: userData.initials || currentUser?.displayName?.charAt(0).toUpperCase() || 'U',
-                author_color: userData.color || '#64748B' 
+                author_initials: userData?.initials || currentUser?.displayName?.charAt(0).toUpperCase() || 'U',
+                author_color: userData?.color || '#64748B' 
             };
 
             await addDoc(collection(db, 'requirements', requirementId, 'comments'), commentData);
