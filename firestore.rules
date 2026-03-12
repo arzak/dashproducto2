@@ -36,6 +36,11 @@ service cloud.firestore {
       
       // Todos los usuarios autenticados pueden crear, editar (mover en Kanban) o borrar requerimientos
       allow write: if isAuthenticated();
+
+      // Reglas para subcolecciones (como comentarios)
+      match /comments/{commentId} {
+        allow read, write: if isAuthenticated();
+      }
     }
     
     // Reglas para la colección 'audit_logs' (historial de ediciones)

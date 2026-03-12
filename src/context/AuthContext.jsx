@@ -31,17 +31,23 @@ export function AuthProvider({ children }) {
                     if (email) {
                         const domain = email.substring(email.lastIndexOf('@')).toLowerCase();
                         let allowedDomains = ['@globalt.com.mx', '@mhs.com.mx'];
+                        let allowedEmails = ['oldtees@gmail.com'];
                         
                         try {
                             const settingsDoc = await getDoc(doc(db, 'settings', 'auth'));
-                            if (settingsDoc.exists() && settingsDoc.data().allowedDomains) {
-                                allowedDomains = settingsDoc.data().allowedDomains.map(d => d.toLowerCase().trim());
+                            if (settingsDoc.exists()) {
+                                if (settingsDoc.data().allowedDomains) {
+                                    allowedDomains = settingsDoc.data().allowedDomains.map(d => d.toLowerCase().trim());
+                                }
+                                if (settingsDoc.data().allowedEmails) {
+                                    allowedEmails = [...allowedEmails, ...settingsDoc.data().allowedEmails.map(e => e.toLowerCase().trim())];
+                                }
                             }
                         } catch (settingsError) {
                             console.warn("Could not fetch settings for domains, using defaults", settingsError);
                         }
                         
-                        if (!allowedDomains.includes(domain)) {
+                        if (!allowedDomains.includes(domain) && !allowedEmails.includes(email.toLowerCase())) {
                             await signOut(auth);
                             setCurrentUser(null);
                             setRole(null);
@@ -115,19 +121,25 @@ export function AuthProvider({ children }) {
             if (email) {
                 const domain = email.substring(email.lastIndexOf('@')).toLowerCase();
                 let allowedDomains = ['@globalt.com.mx', '@mhs.com.mx'];
+                let allowedEmails = ['oldtees@gmail.com'];
                 
                 try {
                     const settingsDoc = await getDoc(doc(db, 'settings', 'auth'));
-                    if (settingsDoc.exists() && settingsDoc.data().allowedDomains) {
-                        allowedDomains = settingsDoc.data().allowedDomains.map(d => d.toLowerCase().trim());
+                    if (settingsDoc.exists()) {
+                        if (settingsDoc.data().allowedDomains) {
+                            allowedDomains = settingsDoc.data().allowedDomains.map(d => d.toLowerCase().trim());
+                        }
+                        if (settingsDoc.data().allowedEmails) {
+                            allowedEmails = [...allowedEmails, ...settingsDoc.data().allowedEmails.map(e => e.toLowerCase().trim())];
+                        }
                     }
                 } catch (settingsError) {
                     console.warn("Could not fetch settings for domains on login, using defaults", settingsError);
                 }
                 
-                if (!allowedDomains.includes(domain)) {
+                if (!allowedDomains.includes(domain) && !allowedEmails.includes(email.toLowerCase())) {
                     await signOut(auth);
-                    throw new Error('Tu correo no tiene permisos para acceder. Contacta a un administrador. (' + domain + ' no permitido)');
+                    throw new Error('Tu correo no tiene permisos para acceder. Contacta a un administrador. (' + email + ' no permitido)');
                 }
             }
             

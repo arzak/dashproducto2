@@ -4,9 +4,10 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import {
     ArrowLeft, Calendar, Clock, Users, FileText, Link as LinkIcon,
-    ExternalLink, BookOpen, Shield, CalendarCheck, Tag, User, Briefcase, Plus, Loader2, Unlink
+    ExternalLink, BookOpen, Shield, CalendarCheck, Tag, User, Briefcase, Plus, Loader2, Unlink, MessageSquare
 } from 'lucide-react';
 import GoogleDocViewer from '../components/GoogleDocViewer';
+import RequirementComments from '../components/RequirementComments';
 import './RequirementDetail.css';
 
 const STATUS_LABELS = {
@@ -41,6 +42,7 @@ export default function RequirementDetail() {
     const [googleDocUrl, setGoogleDocUrl] = useState('');
     const [isSavingDoc, setIsSavingDoc] = useState(false);
     const [docError, setDocError] = useState('');
+    const [activeTab, setActiveTab] = useState('detalles');
 
     useEffect(() => {
         const fetchRequirement = async () => {
@@ -226,147 +228,171 @@ export default function RequirementDetail() {
                 </div>
             </div>
 
+            {/* Tab Navigation */}
+            <div className="req-detail__tabs">
+                <button 
+                    className={`req-detail__tab ${activeTab === 'detalles' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('detalles')}
+                >
+                    <FileText size={16} />
+                    Detalles del Requerimiento
+                </button>
+                <button 
+                    className={`req-detail__tab ${activeTab === 'comentarios' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('comentarios')}
+                >
+                    <MessageSquare size={16} />
+                    Comentarios del Proyecto
+                </button>
+            </div>
+
             {/* 2-column grid */}
             <div className="req-detail__grid">
                 {/* LEFT — Main content */}
                 <div>
-                    {/* Descripción */}
-                    <div className="req-detail__section">
-                        <div className="req-detail__section-title">
-                            <FileText size={14} />
-                            Descripción
-                        </div>
-                        {req.description ? (
-                            <div className="req-detail__text">{req.description}</div>
-                        ) : (
-                            <div className="req-detail__empty">Sin descripción</div>
-                        )}
-                    </div>
-
-                    {/* Objetivo / Scope */}
-                    {req.scope && (
-                        <div className="req-detail__section">
-                            <div className="req-detail__section-title">
-                                <Tag size={14} />
-                                Objetivo
-                            </div>
-                            <div className="req-detail__text">{req.scope}</div>
-                        </div>
-                    )}
-
-                    {/* Reglas de Negocio */}
-                    {req.businessRules && (
-                        <div className="req-detail__section">
-                            <div className="req-detail__section-title">
-                                <Shield size={14} />
-                                Reglas de Negocio
-                            </div>
-                            <div className="req-detail__text">{req.businessRules}</div>
-                        </div>
-                    )}
-
-                    {/* Criterios de Aceptación */}
-                    {req.acceptanceCriteria && (
-                        <div className="req-detail__section">
-                            <div className="req-detail__section-title">
-                                <BookOpen size={14} />
-                                Criterios de Aceptación
-                            </div>
-                            <div className="req-detail__text">{req.acceptanceCriteria}</div>
-                        </div>
-                    )}
-
-                    {/* Notas Técnicas */}
-                    {req.technicalNotes && (
-                        <div className="req-detail__section">
-                            <div className="req-detail__section-title">
-                                <FileText size={14} />
-                                Notas Técnicas
-                            </div>
-                            <div className="req-detail__text">{req.technicalNotes}</div>
-                        </div>
-                    )}
-
-                    {/* Documentos y Ligas */}
-                    {attachmentLines.length > 0 && (
-                        <div className="req-detail__section">
-                            <div className="req-detail__section-title">
-                                <LinkIcon size={14} />
-                                Documentos y Ligas
-                            </div>
-                            <div className="req-detail__links">
-                                {attachmentLines.map((line, i) =>
-                                    isUrl(line) ? (
-                                        <a
-                                            key={i}
-                                            href={line}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="req-detail__link"
-                                        >
-                                            <ExternalLink size={14} />
-                                            {line}
-                                        </a>
-                                    ) : (
-                                        <div key={i} className="req-detail__text" style={{ padding: 'var(--space-2) 0' }}>
-                                            {line}
-                                        </div>
-                                    )
+                    {activeTab === 'detalles' ? (
+                        <>
+                            {/* Descripción */}
+                            <div className="req-detail__section">
+                                <div className="req-detail__section-title">
+                                    <FileText size={14} />
+                                    Descripción
+                                </div>
+                                {req.description ? (
+                                    <div className="req-detail__text">{req.description}</div>
+                                ) : (
+                                    <div className="req-detail__empty">Sin descripción</div>
                                 )}
                             </div>
-                        </div>
-                    )}
 
-                    {/* Google Docs integration */}
-                    <div className="req-detail__section">
-                        <div className="req-detail__section-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <FileText size={14} />
-                                Documento Extendido (Google Docs)
-                            </div>
-                            {req.googleDocId && (
-                                <button 
-                                    className="req-detail__action-btn req-detail__action-btn--danger"
-                                    onClick={handleUnlinkGoogleDoc}
-                                    disabled={isSavingDoc}
-                                    title="Desvincular Google Doc"
-                                >
-                                    {isSavingDoc ? <Loader2 size={14} className="gdoc-viewer__spinner" /> : <Unlink size={14} />}
-                                    Desvincular
-                                </button>
-                            )}
-                        </div>
-                        
-                        {!req.googleDocId ? (
-                            <div className="req-detail__gdoc-input-wrapper">
-                                <div className="req-detail__gdoc-input-group">
-                                    <input 
-                                        type="text" 
-                                        className="req-detail__gdoc-input" 
-                                        placeholder="Ej: https://docs.google.com/document/d/1XyZ..."
-                                        value={googleDocUrl}
-                                        onChange={(e) => setGoogleDocUrl(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleLinkGoogleDoc()}
-                                        disabled={isSavingDoc}
-                                    />
-                                    <button 
-                                        className="req-detail__gdoc-btn" 
-                                        onClick={handleLinkGoogleDoc}
-                                        disabled={isSavingDoc}
-                                    >
-                                        {isSavingDoc ? <Loader2 size={16} className="gdoc-viewer__spinner" /> : <LinkIcon size={16} />}
-                                        Vincular
-                                    </button>
+                            {/* Objetivo / Scope */}
+                            {req.scope && (
+                                <div className="req-detail__section">
+                                    <div className="req-detail__section-title">
+                                        <Tag size={14} />
+                                        Objetivo
+                                    </div>
+                                    <div className="req-detail__text">{req.scope}</div>
                                 </div>
-                                {docError && <div className="req-detail__gdoc-error">{docError}</div>}
-                                <p className="req-detail__gdoc-help">
-                                    Pega la URL del Google Doc. Asegúrate de que el documento sea público para lectura o que la API de Google tenga acceso.
-                                </p>
+                            )}
+
+                            {/* Reglas de Negocio */}
+                            {req.businessRules && (
+                                <div className="req-detail__section">
+                                    <div className="req-detail__section-title">
+                                        <Shield size={14} />
+                                        Reglas de Negocio
+                                    </div>
+                                    <div className="req-detail__text">{req.businessRules}</div>
+                                </div>
+                            )}
+
+                            {/* Criterios de Aceptación */}
+                            {req.acceptanceCriteria && (
+                                <div className="req-detail__section">
+                                    <div className="req-detail__section-title">
+                                        <BookOpen size={14} />
+                                        Criterios de Aceptación
+                                    </div>
+                                    <div className="req-detail__text">{req.acceptanceCriteria}</div>
+                                </div>
+                            )}
+
+                            {/* Notas Técnicas */}
+                            {req.technicalNotes && (
+                                <div className="req-detail__section">
+                                    <div className="req-detail__section-title">
+                                        <FileText size={14} />
+                                        Notas Técnicas
+                                    </div>
+                                    <div className="req-detail__text">{req.technicalNotes}</div>
+                                </div>
+                            )}
+
+                            {/* Documentos y Ligas */}
+                            {attachmentLines.length > 0 && (
+                                <div className="req-detail__section">
+                                    <div className="req-detail__section-title">
+                                        <LinkIcon size={14} />
+                                        Documentos y Ligas
+                                    </div>
+                                    <div className="req-detail__links">
+                                        {attachmentLines.map((line, i) =>
+                                            isUrl(line) ? (
+                                                <a
+                                                    key={i}
+                                                    href={line}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="req-detail__link"
+                                                >
+                                                    <ExternalLink size={14} />
+                                                    {line}
+                                                </a>
+                                            ) : (
+                                                <div key={i} className="req-detail__text" style={{ padding: 'var(--space-2) 0' }}>
+                                                    {line}
+                                                </div>
+                                            )
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Google Docs integration */}
+                            <div className="req-detail__section">
+                                <div className="req-detail__section-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <FileText size={14} />
+                                        Documento Extendido (Google Docs)
+                                    </div>
+                                    {req.googleDocId && (
+                                        <button 
+                                            className="req-detail__action-btn req-detail__action-btn--danger"
+                                            onClick={handleUnlinkGoogleDoc}
+                                            disabled={isSavingDoc}
+                                            title="Desvincular Google Doc"
+                                        >
+                                            {isSavingDoc ? <Loader2 size={14} className="gdoc-viewer__spinner" /> : <Unlink size={14} />}
+                                            Desvincular
+                                        </button>
+                                    )}
+                                </div>
+                                
+                                {!req.googleDocId ? (
+                                    <div className="req-detail__gdoc-input-wrapper">
+                                        <div className="req-detail__gdoc-input-group">
+                                            <input 
+                                                type="text" 
+                                                className="req-detail__gdoc-input" 
+                                                placeholder="Ej: https://docs.google.com/document/d/1XyZ..."
+                                                value={googleDocUrl}
+                                                onChange={(e) => setGoogleDocUrl(e.target.value)}
+                                                onKeyDown={(e) => e.key === 'Enter' && handleLinkGoogleDoc()}
+                                                disabled={isSavingDoc}
+                                            />
+                                            <button 
+                                                className="req-detail__gdoc-btn" 
+                                                onClick={handleLinkGoogleDoc}
+                                                disabled={isSavingDoc}
+                                            >
+                                                {isSavingDoc ? <Loader2 size={16} className="gdoc-viewer__spinner" /> : <LinkIcon size={16} />}
+                                                Vincular
+                                            </button>
+                                        </div>
+                                        {docError && <div className="req-detail__gdoc-error">{docError}</div>}
+                                        <p className="req-detail__gdoc-help">
+                                            Pega la URL del Google Doc. Asegúrate de que el documento sea público para lectura o que la API de Google tenga acceso.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <GoogleDocViewer documentId={req.googleDocId} />
+                                )}
                             </div>
-                        ) : (
-                            <GoogleDocViewer documentId={req.googleDocId} />
-                        )}
-                    </div>
+                        </>
+                    ) : (
+                        <RequirementComments requirementId={id} />
+                    )}
                 </div>
 
                 {/* RIGHT — Sidebar info */}
