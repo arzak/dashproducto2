@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
-import { Send, MessageSquare, Clock, User, Loader2, Upload, X, FileText, Sparkles } from 'lucide-react';
+import { Send, MessageSquare, Clock, User, Loader2, Upload, X, FileText, Sparkles, Briefcase } from 'lucide-react';
 import { parseTranscriptFile } from '../utils/transcriptionParser';
 import { extractAgreementsFromTranscript, formatAgreementAsComment } from '../services/googleAI';
 import './RequirementComments.css';
@@ -18,7 +18,7 @@ export default function RequirementComments({ requirementId }) {
     const [importingFile, setImportingFile] = useState(false);
     const [processingAI, setProcessingAI] = useState(false);
     const [extractedText, setExtractedText] = useState('');
-    const [agreements, setAgreements] = useState([]);
+    const [aiResult, setAiResult] = useState({ acuerdos: [], reglasNegocio: [] });
     const [aiError, setAiError] = useState('');
     const fileInputRef = useRef(null);
 
@@ -125,8 +125,8 @@ export default function RequirementComments({ requirementId }) {
         setAiError('');
         
         try {
-            const extractedAgreements = await extractAgreementsFromTranscript(extractedText);
-            setAgreements(extractedAgreements);
+            const result = await extractAgreementsFromTranscript(extractedText);
+            setAiResult(result);
         } catch (err) {
             setAiError(err.message);
         } finally {
@@ -135,9 +135,9 @@ export default function RequirementComments({ requirementId }) {
     };
 
     const handleSaveAgreements = async () => {
-        if (agreements.length === 0) return;
+        if (aiResult.acuerdos.length === 0 && aiResult.reglasNegocio.length === 0) return;
         
-        const commentText = formatAgreementAsComment(agreements);
+        const commentText = formatAgreementAsComment(aiResult);
         
         setSending(true);
         try {
@@ -165,7 +165,7 @@ export default function RequirementComments({ requirementId }) {
     const closeModal = () => {
         setShowImportModal(false);
         setExtractedText('');
-        setAgreements([]);
+        setAiResult({ acuerdos: [], reglasNegocio: [] });
         setAiError('');
     };
 
@@ -265,7 +265,7 @@ export default function RequirementComments({ requirementId }) {
                                     <Loader2 size={24} className="animate-spin" />
                                     <p>Procesando archivo...</p>
                                 </div>
-                            ) : agreements.length === 0 ? (
+                            ) : aiResult.acuerdos.length === 0 && aiResult.reglasNegocio.length === 0 ? (
                                 <>
                                     <div className="transcript-preview">
                                         <div className="preview-label">
@@ -305,35 +305,61 @@ export default function RequirementComments({ requirementId }) {
                                 </>
                             ) : (
                                 <>
-                                    <div className="agreements-preview">
-                                        <div className="preview-label">
-                                            <Sparkles size={14} />
-                                            Acuerdos detectados ({agreements.length})
-                                        </div>
-                                        <div className="agreements-list">
-                                            {agreements.map((agreement, index) => (
-                                                <div key={index} className="agreement-item">
-                                                    <div className="agreement-number">{index + 1}</div>
-                                                    <div className="agreement-content">
-                                                        <div className="agreement-text">{agreement.texto || agreement.text}</div>
-                                                        <div className="agreement-meta">
-                                                            {agreement.responsable && (
-                                                                <span><User size={12} /> {agreement.responsable}</span>
-                                                            )}
-                                                            {agreement.fecha && (
-                                                                <span><Clock size={12} /> {agreement.fecha}</span>
-                                                            )}
+                                    {aiResult.acuerdos.length > 0 && (
+                                        <div className="agreements-preview">
+                                            <div className="preview-label">
+                                                <Sparkles size={14} />
+                                                Acuerdos detectados ({aiResult.acuerdos.length})
+                                            </div>
+                                            <div className="agreements-list">
+                                                {aiResult.acuerdos.map((agreement, index) => (
+                                                    <div key={index} className="agreement-item">
+                                                        <div className="agreement-number">{index + 1}</div>
+                                                        <div className="agreement-content">
+                                                            <div className="agreement-text">{agreement.texto || agreement.text}</div>
+                                                            <div className="agreement-meta">
+                                                                {agreement.responsable && (
+                                                                    <span><User size={12} /> {agreement.responsable}</span>
+                                                                )}
+                                                                {agreement.fecha && (
+                                                                    <span><Clock size={12} /> {agreement.fecha}</span>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            ))}
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
+                                    )}
+
+                                    {aiResult.reglasNegocio.length > 0 && (
+                                        <div className="agreements-preview" style={{ marginTop: 'var(--space-4)' }}>
+                                            <div className="preview-label">
+                                                <Sparkles size={14} />
+                                                Reglas de Negocio detectadas ({aiResult.reglasNegocio.length})
+                                            </div>
+                                            <div className="agreements-list">
+                                                {aiResult.reglasNegocio.map((rule, index) => (
+                                                    <div key={index} className="agreement-item">
+                                                        <div className="agreement-number" style={{ background: '#F59E0B' }}>{index + 1}</div>
+                                                        <div className="agreement-content">
+                                                            <div className="agreement-text">{rule.descripcion || rule.description}</div>
+                                                            <div className="agreement-meta">
+                                                                {rule.area && (
+                                                                    <span><Briefcase size={12} /> {rule.area}</span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                     
                                     <div className="modal-actions">
                                         <button 
                                             className="btn btn--secondary"
-                                            onClick={() => setAgreements([])}
+                                            onClick={() => setAiResult({ acuerdos: [], reglasNegocio: [] })}
                                             disabled={sending}
                                         >
                                             Volver a procesar
@@ -341,7 +367,7 @@ export default function RequirementComments({ requirementId }) {
                                         <button 
                                             className="btn btn--primary"
                                             onClick={handleSaveAgreements}
-                                            disabled={sending || agreements.length === 0}
+                                            disabled={sending || (aiResult.acuerdos.length === 0 && aiResult.reglasNegocio.length === 0)}
                                         >
                                             {sending ? (
                                                 <><Loader2 size={16} className="animate-spin" /> Guardando...</>
