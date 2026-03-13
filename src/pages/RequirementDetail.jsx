@@ -214,11 +214,11 @@ export default function RequirementDetail() {
                                 gap: '4px',
                                 padding: '4px 12px',
                                 borderRadius: 'var(--radius-full)',
-                                background: 'var(--color-bg)',
-                                border: '1px solid var(--color-border)',
+                                background: '#3B82F620',
+                                border: '1px solid #3B82F6',
                                 fontSize: 'var(--font-size-xs)',
-                                color: 'var(--color-text-secondary)',
-                                fontWeight: 'var(--font-weight-medium)',
+                                color: '#3B82F6',
+                                fontWeight: 'var(--font-weight-semibold)',
                             }}>
                                 <Briefcase size={12} />
                                 {req.currentTrackingTeam}
