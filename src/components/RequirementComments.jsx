@@ -102,7 +102,7 @@ export default function RequirementComments({ requirementId }) {
         setImportingFile(true);
         setAiError('');
         setExtractedText('');
-        setAgreements([]);
+        setAiResult({ acuerdos: [], reglasNegocio: [] });
         
         try {
             const text = await parseTranscriptFile(file);

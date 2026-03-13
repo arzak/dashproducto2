@@ -35,33 +35,15 @@ exports.extractAgreements = onCall({
         ? transcriptText.substring(0, maxChars) + '...'
         : transcriptText;
 
-    const prompt = `Eres un asistente que extrae acuerdos y reglas de negocio de reuniones.
+    const prompt = `Extrae acuerdos y reglas de negocio de esta transcripción. Responde SOLO con JSON, sin texto adicional.
+
+Ejemplo de formato:
+{"acuerdos":[{"texto":"Decisión tomada","responsable":"Nombre","fecha":"fecha"}],"reglasNegocio":[{"descripcion":"Regla","area":"Área"}]}
 
 Transcripción:
 ${truncatedText}
 
-Extrae TODOS los acuerdos mencionados. Para cada acuerdo indica:
-- Qué se decidió
-- Quién es responsable (si se mencionó)
-- Fecha límite (si se mencionó)
-
-Luego extrae TODAS las reglas de negocio mencionadas. Una regla de negocio es una política, norma o restricción que debe cumplirse. Para cada regla indica:
-- Descripción de la regla
-- Área o proceso afectado (si se mencionó)
-
-Formatea respuesta como JSON:
-{
-  "acuerdos": [
-    {"texto": "...", "responsable": "...", "fecha": "..."}
-  ],
-  "reglasNegocio": [
-    {"descripcion": "...", "area": "..."}
-  ]
-}
-
-Si no hay acuerdos claros, devuelve: {"acuerdos": [], "reglasNegocio": []}
-
-Solo responde con JSON válido, sin texto adicional ni markdown.`;
+Si no hay acuerdos: {"acuerdos":[],"reglasNegocio":[]}`;
 
     try {
         const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
@@ -77,9 +59,8 @@ Solo responde con JSON válido, sin texto adicional ni markdown.`;
                 }],
                 generationConfig: {
                     temperature: 0.2,
-                    maxOutputTokens: 2048,
-                    topP: 0.8,
-                    topK: 40
+                    maxOutputTokens: 8192,
+                    responseMimeType: 'application/json'
                 }
             })
         });
@@ -97,15 +78,37 @@ Solo responde con JSON válido, sin texto adicional ni markdown.`;
 
         const responseText = data.candidates[0].content.parts[0].text;
         
-        let jsonMatch = responseText.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) {
-            throw new Error('La respuesta de la IA no contiene JSON válido');
-        }
-
-        let jsonStr = jsonMatch[0];
-        jsonStr = jsonStr.replace(/```json/g, '').replace(/```/g, '').trim();
+        logger.info('Respuesta IA (primeros 500 chars):', responseText.substring(0, 500));
         
-        const parsed = JSON.parse(jsonStr);
+        let jsonStr = responseText.trim();
+        
+        let parsed;
+        try {
+            parsed = JSON.parse(jsonStr);
+        } catch (parseError) {
+            // Intentar extraer solo el JSON
+            const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                try {
+                    let cleanJson = jsonMatch[0]
+                        .replace(/,\s*}/g, '}')
+                        .replace(/,\s*]/g, ']')
+                        .replace(/```/g, '')
+                        .replace(/"fecha":\s*"([^"]*)$/gm, '"fecha": "$1"') // Completar comillas cortadas
+                        .replace(/"responsable":\s*"([^"]*)$/gm, '"responsable": "$1"')
+                        .replace(/"texto":\s*"([^"]*)$/gm, '"texto": "$1"')
+                        .replace(/"descripcion":\s*"([^"]*)$/gm, '"descripcion": "$1"')
+                        .replace(/"area":\s*"([^"]*)$/gm, '"area": "$1"');
+                    parsed = JSON.parse(cleanJson);
+                } catch (e) {
+                    logger.error('JSON parse error:', e.message, 'Intento:', jsonMatch[0].substring(0, 300));
+                    throw new Error('JSON inválido');
+                }
+            } else {
+                logger.error('No se encontró JSON. Respuesta:', responseText.substring(0, 500));
+                throw new Error('No se encontró JSON en la respuesta');
+            }
+        }
         
         if (!parsed.acuerdos || !Array.isArray(parsed.acuerdos)) {
             throw new Error('Formato de respuesta inválido');

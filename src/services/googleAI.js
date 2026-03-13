@@ -2,7 +2,7 @@ import { httpsCallable } from 'firebase/functions';
 import { functions } from '../firebase';
 
 export async function extractAgreementsFromTranscript(transcriptText) {
-  if (!transractText || transcriptText.trim().length === 0) {
+  if (!transcriptText || transcriptText.trim().length === 0) {
     throw new Error('El texto de la transcripción está vacío');
   }
 
