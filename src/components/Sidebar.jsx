@@ -27,7 +27,7 @@ export default function Sidebar() {
                     <Logo size={24} />
                 </div>
                 <div>
-                    <div className="sidebar__brand-name">Gestión Pro</div>
+                    <div className="sidebar__brand-name">Requerimientos</div>
                     <div className="sidebar__brand-sub">Ciclo de Vida</div>
                 </div>
             </div>

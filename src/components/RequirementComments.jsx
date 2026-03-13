@@ -191,13 +191,30 @@ export default function RequirementComments({ requirementId }) {
                     style={{ display: 'none' }}
                 />
                 <button 
-                    className="btn btn--secondary import-btn"
+                    className="btn import-ai-btn"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={importingFile}
-                    style={{ marginLeft: 'auto' }}
+                    style={{ 
+                        marginLeft: 'auto',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        border: 'none',
+                        borderRadius: 'var(--radius-lg)',
+                        padding: '10px 20px',
+                        color: 'white',
+                        fontWeight: 'var(--font-weight-semibold)',
+                        fontSize: 'var(--font-size-sm)',
+                        cursor: importingFile ? 'not-allowed' : 'pointer',
+                        transition: 'all var(--transition-fast)',
+                        boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                    onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                 >
-                    {importingFile ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-                    {importingFile ? 'Leyendo...' : 'Importar transcripción'}
+                    {importingFile ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
+                    {importingFile ? 'Procesando...' : 'Importar con IA'}
                 </button>
             </div>
 

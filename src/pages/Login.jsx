@@ -36,7 +36,7 @@ export default function Login() {
                         <Logo size={28} />
                     </div>
                 </div>
-                <h2 className="login__title">Gestión de proyectos</h2>
+                <h2 className="login__title">Requerimientos</h2>
                 <p className="login__subtitle">Ciclo de Vida de Requerimientos</p>
 
                 {error && (
