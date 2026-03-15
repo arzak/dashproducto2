@@ -2,7 +2,7 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
     // Función reutilizable para verificar si el usuario está autenticado
     function isAuthenticated() {
       return request.auth != null;
@@ -13,18 +13,39 @@ service cloud.firestore {
       return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
     }
 
+    // Funciones de validación de datos
+    function isValidEmail(email) {
+      return email.matches('^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$');
+    }
+
+    function isValidRole(role) {
+      return role in ['Admin', 'Dev', 'User'];
+    }
+
+    function hasOnlyValidKeys(data, validKeys) {
+      return data.keys().hasOnly(validKeys);
+    }
+
     // Reglas para la colección 'users'
     match /users/{userId} {
       // Cualquiera autenticado puede leer la lista de usuarios (para asignar miembros, ver el directorio)
       allow read: if isAuthenticated();
-      
+
       // La creación está permitida si el usuario está autenticado y su UID coincide (para el registro inicial en AuthContext)
       // o si es un Administrador (agregando desde Team.jsx)
-      allow create: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
-      
+      allow create: if isAuthenticated() 
+                    && (request.auth.uid == userId || isAdmin())
+                    && hasOnlyValidKeys(request.resource.data, ['email', 'name', 'role', 'createdAt', 'updatedAt'])
+                    && isValidEmail(request.resource.data.email)
+                    && isValidRole(request.resource.data.role);
+
       // La actualización está permitida si es el mismo usuario (editando perfil) o si es Admin (re-asignando roles)
-      allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
-      
+      allow update: if isAuthenticated() 
+                    && (request.auth.uid == userId || isAdmin())
+                    && hasOnlyValidKeys(request.resource.data, ['email', 'name', 'role', 'createdAt', 'updatedAt'])
+                    && isValidEmail(request.resource.data.email)
+                    && isValidRole(request.resource.data.role);
+
       // Solo un admin puede borrar usuarios
       allow delete: if isAdmin();
     }
@@ -33,28 +54,49 @@ service cloud.firestore {
     match /requirements/{requirementId} {
       // Todos los usuarios autenticados pueden ver los requerimientos
       allow read: if isAuthenticated();
-      
+
       // Todos los usuarios autenticados pueden crear, editar (mover en Kanban) o borrar requerimientos
-      allow write: if isAuthenticated();
+      allow create: if isAuthenticated()
+                    && hasOnlyValidKeys(request.resource.data, ['title', 'description', 'status', 'column', 'priority', 'assignees', 'tags', 'createdAt', 'updatedAt', 'createdBy']);
+
+      allow update: if isAuthenticated()
+                    && hasOnlyValidKeys(request.resource.data, ['title', 'description', 'status', 'column', 'priority', 'assignees', 'tags', 'createdAt', 'updatedAt', 'createdBy']);
+
+      allow delete: if isAuthenticated();
 
       // Reglas para subcolecciones (como comentarios)
       match /comments/{commentId} {
-        allow read, write: if isAuthenticated();
+        allow read: if isAuthenticated();
+        
+        allow create: if isAuthenticated()
+                      && hasOnlyValidKeys(request.resource.data, ['text', 'userId', 'userName', 'createdAt'])
+                      && request.resource.data.text.size > 0
+                      && request.resource.data.text.size <= 1000;
+        
+        allow update: if isAuthenticated()
+                      && hasOnlyValidKeys(request.resource.data, ['text', 'userId', 'userName', 'createdAt'])
+                      && request.resource.data.text.size > 0
+                      && request.resource.data.text.size <= 1000;
+        
+        allow delete: if isAuthenticated();
       }
     }
-    
+
     // Reglas para la colección 'audit_logs' (historial de ediciones)
     match /audit_logs/{logId} {
       // Cualquier usuario autenticado puede escribir un log de auditoría
-      allow create: if isAuthenticated();
+      allow create: if isAuthenticated()
+                    && hasOnlyValidKeys(request.resource.data, ['action', 'userId', 'userName', 'timestamp', 'details', 'collection', 'documentId']);
+      
       // Solo admins pueden leer el historial completo
       allow read: if isAdmin();
     }
-    
+
     // Reglas para la colección 'settings' (configuración general)
     match /settings/{document=**} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow write: if isAdmin()
+                   && hasOnlyValidKeys(request.resource.data, ['key', 'value', 'description', 'updatedAt', 'updatedBy']);
     }
 
     // Regla de seguridad por defecto para bloquear cualquier otra colección no prevista
