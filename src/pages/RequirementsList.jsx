@@ -3,6 +3,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { collection, doc, updateDoc, onSnapshot, serverTimestamp, addDoc, Timestamp, getDocs } from 'firebase/firestore';
 import { db, auth } from '../firebase';
+import { createStatusChangeNotification } from '../services/notificationService';
 import { Edit2, X, UserPlus, Check, Link, CalendarCheck } from 'lucide-react';
 import './RequirementsList.css';
 
@@ -211,6 +212,15 @@ export default function RequirementsList() {
                 updatePayload[`status_${formData.status}_at`] = serverTimestamp();
             }
             await updateDoc(doc(db, 'requirements', editingReq.id), updatePayload);
+
+            // Notificar si el estado cambió
+            if (formData.status !== editingReq.status) {
+                createStatusChangeNotification(
+                    { id: editingReq.id, title: formData.title || editingReq.title },
+                    editingReq.status,
+                    formData.status
+                );
+            }
         } catch (error) {
             console.error('Error actualizando requerimiento:', error);
             alert('No se pudo guardar. Verifica tus permisos en Firestore.');

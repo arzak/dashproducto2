@@ -3,6 +3,7 @@ import { collection, onSnapshot, doc, updateDoc, serverTimestamp } from 'firebas
 import { GripVertical, MoreHorizontal, Eye, Calendar, MessageSquare, LayoutDashboard, AlignLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
+import { createStatusChangeNotification } from '../services/notificationService';
 import './KanbanBoard.css';
 
 const COLUMNS = [
@@ -127,6 +128,13 @@ export default function KanbanBoard() {
                 status: columnId,
                 [statusField]: serverTimestamp(),
             });
+
+            // Disparar notificación
+            createStatusChangeNotification(
+                draggedCard, 
+                draggedCard.status, 
+                columnId
+            );
         } catch {
             /* Firebase not configured */
         }

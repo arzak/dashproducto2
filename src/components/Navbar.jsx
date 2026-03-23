@@ -4,6 +4,7 @@ import { collection, onSnapshot } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
+import { subscribeToNotifications, markAsRead, markAllAsRead } from '../services/notificationService';
 import './Navbar.css';
 
 const STATUS_LABELS = {
@@ -37,8 +38,13 @@ export default function Navbar() {
         try { return JSON.parse(localStorage.getItem('recentSearches') || '[]'); } catch { return []; }
     });
 
+    const [notifications, setNotifications] = useState([]);
+    const [isNotifOpen, setIsNotifOpen] = useState(false);
+    const unreadCount = notifications.filter(n => !n.isRead).length;
+
     const inputRef = useRef(null);
     const dropdownRef = useRef(null);
+    const notifRef = useRef(null);
 
     // Load all requirements once from Firestore
     useEffect(() => {
@@ -49,6 +55,15 @@ export default function Navbar() {
             return unsub;
         } catch { /* no firebase */ }
     }, []);
+
+    // Load notifications
+    useEffect(() => {
+        if (!currentUser) return;
+        const unsub = subscribeToNotifications((notifs) => {
+            setNotifications(notifs);
+        });
+        return unsub;
+    }, [currentUser]);
 
     // Filter in real time
     useEffect(() => {
@@ -75,6 +90,9 @@ export default function Navbar() {
                 inputRef.current && !inputRef.current.contains(e.target)
             ) {
                 setIsOpen(false);
+            }
+            if (notifRef.current && !notifRef.current.contains(e.target)) {
+                setIsNotifOpen(false);
             }
         };
         document.addEventListener('mousedown', handler);
@@ -126,6 +144,24 @@ export default function Navbar() {
     };
 
     const showDropdown = isOpen && (query.trim() ? true : recentSearches.length > 0);
+
+    const handleNotifClick = (notif) => {
+        markAsRead(notif.id);
+        setIsNotifOpen(false);
+        navigate(`/requerimiento/${notif.requirementId}`);
+    };
+
+    const formatTime = (timestamp) => {
+        if (!timestamp) return '';
+        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+        const diff = Date.now() - date.getTime();
+        const mins = Math.floor(diff / 60000);
+        if (mins < 1) return 'Ahora';
+        if (mins < 60) return `Hace ${mins}m`;
+        const hours = Math.floor(mins / 60);
+        if (hours < 24) return `Hace ${hours}h`;
+        return date.toLocaleDateString();
+    };
 
     return (
         <header className="navbar">
@@ -218,9 +254,63 @@ export default function Navbar() {
 
             {/* Actions */}
             <div className="navbar__actions">
-                <button className="navbar__icon-btn" title="Notificaciones">
-                    <Bell size={20} />
-                </button>
+                <div style={{ position: 'relative' }} ref={notifRef}>
+                    <button 
+                        className="navbar__icon-btn" 
+                        title="Notificaciones"
+                        onClick={() => setIsNotifOpen(!isNotifOpen)}
+                    >
+                        <Bell size={20} />
+                        {unreadCount > 0 && <span className="navbar__notification-dot" />}
+                    </button>
+
+                    {isNotifOpen && (
+                        <div className="navbar__notifications-dropdown">
+                            <div className="navbar__notif-header">
+                                <h3>Notificaciones</h3>
+                                {unreadCount > 0 && (
+                                    <button 
+                                        className="navbar__notif-clear" 
+                                        onClick={() => markAllAsRead(notifications)}
+                                    >
+                                        Marcar todo como leído
+                                    </button>
+                                )}
+                            </div>
+                            <div className="navbar__notif-list">
+                                {notifications.length > 0 ? (
+                                    notifications.map(n => (
+                                        <button 
+                                            key={n.id} 
+                                            className={`navbar__notif-item ${!n.isRead ? 'navbar__notif-item--unread' : ''}`}
+                                            onClick={() => handleNotifClick(n)}
+                                        >
+                                            <div className="navbar__notif-icon">
+                                                <FileText size={16} />
+                                            </div>
+                                            <div className="navbar__notif-content">
+                                                <div className="navbar__notif-title">
+                                                    {n.actorName} movió una tarea
+                                                </div>
+                                                <div className="navbar__notif-desc">
+                                                    <strong>{n.requirementTitle}</strong> pasó de{' '}
+                                                    <span style={{ color: STATUS_COLORS[n.oldStatus] }}>{STATUS_LABELS[n.oldStatus]}</span> a{' '}
+                                                    <span style={{ color: STATUS_COLORS[n.newStatus] }}>{STATUS_LABELS[n.newStatus]}</span>
+                                                </div>
+                                                <div className="navbar__notif-time">{formatTime(n.createdAt)}</div>
+                                            </div>
+                                        </button>
+                                    ))
+                                ) : (
+                                    <div className="navbar__notif-empty">
+                                        No tienes notificaciones
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
                 <button className="navbar__icon-btn" title="Configuración">
                     <Settings size={20} />
                 </button>

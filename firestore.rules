@@ -56,11 +56,9 @@ service cloud.firestore {
       allow read: if isAuthenticated();
 
       // Todos los usuarios autenticados pueden crear, editar (mover en Kanban) o borrar requerimientos
-      allow create: if isAuthenticated()
-                    && hasOnlyValidKeys(request.resource.data, ['title', 'description', 'status', 'column', 'priority', 'assignees', 'tags', 'createdAt', 'updatedAt', 'createdBy']);
+      allow create: if isAuthenticated();
 
-      allow update: if isAuthenticated()
-                    && hasOnlyValidKeys(request.resource.data, ['title', 'description', 'status', 'column', 'priority', 'assignees', 'tags', 'createdAt', 'updatedAt', 'createdBy']);
+      allow update: if isAuthenticated();
 
       allow delete: if isAuthenticated();
 
@@ -84,12 +82,13 @@ service cloud.firestore {
 
     // Reglas para la colección 'audit_logs' (historial de ediciones)
     match /audit_logs/{logId} {
-      // Cualquier usuario autenticado puede escribir un log de auditoría
-      allow create: if isAuthenticated()
-                    && hasOnlyValidKeys(request.resource.data, ['action', 'userId', 'userName', 'timestamp', 'details', 'collection', 'documentId']);
-      
-      // Solo admins pueden leer el historial completo
-      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow read: if isAuthenticated();
+    }
+
+    // Reglas para la colección 'notifications'
+    match /notifications/{notificationId} {
+      allow read, write: if isAuthenticated();
     }
 
     // Reglas para la colección 'settings' (configuración general)
