@@ -64,19 +64,7 @@ service cloud.firestore {
 
       // Reglas para subcolecciones (como comentarios)
       match /comments/{commentId} {
-        allow read: if isAuthenticated();
-        
-        allow create: if isAuthenticated()
-                      && hasOnlyValidKeys(request.resource.data, ['text', 'userId', 'userName', 'createdAt'])
-                      && request.resource.data.text.size > 0
-                      && request.resource.data.text.size <= 1000;
-        
-        allow update: if isAuthenticated()
-                      && hasOnlyValidKeys(request.resource.data, ['text', 'userId', 'userName', 'createdAt'])
-                      && request.resource.data.text.size > 0
-                      && request.resource.data.text.size <= 1000;
-        
-        allow delete: if isAuthenticated();
+        allow read, create, update, delete: if isAuthenticated();
       }
     }
 
